@@ -1,5 +1,6 @@
 # Driver-Profile-Classification
-Driver Profile Classification thesis repository
+Driver Profile Classification thesis repository. This project aims to develop a system that takes advantage of the use of machine learning techniques to
+establish a driving profile based on trips data obtained in a non-intrusive way.
 
 Pre-Requisites
 --------------
