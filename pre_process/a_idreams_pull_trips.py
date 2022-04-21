@@ -309,7 +309,7 @@ def main(ti_str, tf_str=None):
 
     """
 
-    path = os.path.join(os.getcwd(), 'trips')
+    path = os.path.join(os.getcwd(), '../trips')
 
     # parse dates
     try:

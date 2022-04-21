@@ -2,10 +2,11 @@
 import os
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 import json
 from sklearn.cluster import KMeans
 # local
-from open_street_map import is_over_speed_limit
+from b_open_street_map import is_over_speed_limit
 
 
 def read_all_trips(path):
@@ -460,17 +461,18 @@ def edit_me_aws_events(ev, df):
         )
 
         # Para o time_indicator:
-        # 1 - Calcular a moda da hora do dia que mais acontece na trip
+        # 1 - Calcular a moda da hora do dia que mais acontece na trip pq
+        # existem algumas falhas às vezes passa de dia para dusk e dps para dia
         # através do ME_AWS
         vals, counts = np.unique(ev['time_indicator'], return_counts=True)
         index = np.argmax(counts)
         light_mode = vals[index]
-        if light_mode == 'day':
-            light_mode = 1
-        elif light_mode == 'dusk':
-            light_mode = 2
-        elif light_mode == 'night':
-            light_mode = 3
+        # if light_mode == 'day':
+        #     light_mode = 1
+        # elif light_mode == 'dusk':
+        #     light_mode = 2
+        # elif light_mode == 'night':
+        #     light_mode = 3
 
         # Para o tsr:
         # 1 - Calcular o numero de vezes que ultrapassou o speed limit
@@ -615,23 +617,37 @@ def edit_me_car_events(ev, df, osm_speed=True):
         speed = np.mean(ev['speed'])
 
         # GPS overspeeding events
-        overspeed_df = ev[['ts', 'speed']].copy()
+        overspeed_df = ev[['ts', 'speed']].copy()  # [100:105]
+        # overspeed_df.loc[len(overspeed_df.index)] = ['2021-04-21T06:39:58.722045+00:00', 65]
         print('ME_Car', overspeed_df)
+
+        # convert columns to appropriate type
+        overspeed_df['ts'] = pd.to_datetime(overspeed_df['ts'])
+        overspeed_df['speed'] = pd.to_numeric(overspeed_df['speed'])
+
+        # line plot for gps
+        overspeed_df.plot(
+            kind='line',
+            x='ts',
+            y='speed',
+            color='green'
+        )
+        plt.title('Me_Car Speed')
 
         # read GPS table
         n_over_limit = None
         gps_ev = read_csv_file(folder + 'GPS')
 
         if gps_ev is not None and osm_speed:
-            gps_ts_speed = gps_ev[['ts']]
+            gps_ts_speed = gps_ev[['ts']]  # [14:17]
             gps_ts_speed['speed'] = None
+            # gps_ts_speed.loc[len(gps_ts_speed.index)] = ['2021-04-21T06:39:57.722045+00:00', None]
+            # convert columns to appropriate type
+            gps_ts_speed['ts'] = pd.to_datetime(gps_ts_speed['ts'])
+            gps_ts_speed['speed'] = pd.to_numeric(gps_ts_speed['speed'])
 
             # add GPS (ts, speed=None) to the ME_Car (ts, speed) events
             overspeed_df = overspeed_df.append(gps_ts_speed, ignore_index=True)
-
-            # convert columns to appropriate type
-            overspeed_df['ts'] = pd.to_datetime(overspeed_df['ts'])
-            overspeed_df['speed'] = pd.to_numeric(overspeed_df['speed'])
 
             # sort rows by timestamp column and reset indexes
             # drop=True makes sure old indexes are not added as new column
@@ -642,25 +658,37 @@ def edit_me_car_events(ev, df, osm_speed=True):
             # get the rows that need to calculate the speed
             speed_rows = overspeed_df[overspeed_df['speed'].isnull()]
 
-            # make timestamp column the index (for the interpolate function)
-            overspeed_df.index = overspeed_df['ts']
-            del overspeed_df['ts']
+            # convert ts to only seconds since trip started
+            position = overspeed_df.columns.get_loc('ts')
+            overspeed_df['ts'] = overspeed_df.iloc[1:, position] - \
+                overspeed_df.iat[0, position]
+            overspeed_df['ts'] = overspeed_df['ts'].dt.total_seconds()
 
             # linear interpolation
-            overspeed_df = overspeed_df.interpolate().reset_index()
-            print('interpolated: ', overspeed_df)
+            interpolated = overspeed_df.interpolate().reset_index().loc[speed_rows.index, :]
 
             # if first speed is null -> GPS first ts is < ME_Car ts
-            if overspeed_df.iloc[:1]['speed'].isnull()[0]:
-                overspeed_df.fillna(
-                    overspeed_df[~overspeed_df['speed'].isnull()]
+            if interpolated.loc[interpolated.index[0], 'speed']:
+                # fill with ME_Car first value
+                interpolated.fillna(
+                    interpolated[~interpolated['speed'].isnull()]
                     .head(1)['speed'].values[0],
                     inplace=True
                 )
 
-            # count the number of overspeeding events
+            # line plot for me_car
+            interpolated.plot(
+                kind='line',
+                x='ts',
+                y='speed',
+                color='blue'
+            )
+            plt.title('GPS Speed Interpolation')
+            plt.show()
+
+            # count the number of speeding events
             # read lat and lon from GPS and speed from ME_Car
-            speed_values = overspeed_df.iloc[speed_rows.index]['speed']
+            speed_values = interpolated.loc[speed_rows.index, 'speed']
             print('Indexes', speed_rows.index)
             print('Speed values', speed_values)
             speed_limits = list(map(
@@ -948,26 +976,27 @@ def edit_idreams_speeding(ev, df):
 
 if __name__ == "__main__":
 
-    folder = 'trips/2021_04_21T05_42_57__25Kf7/'
+    folder = '../trips/2021_04_21T05_42_57__25Kf7/'
     info = read_json_file(folder + 'info.json')
-    # construct_dataset(folder, info)
+    construct_dataset(folder, info)
     # read_all_trips('./trips')
 
+    # trips_v2   -> Uma feature estava mal calculada
     # trips_v2.1 -> Timedeltas converted to seconds
     # trips_v2.2 -> light_mode converted to int (day=1, dusk=2, night=3)
 
-    trips = read_csv_file('datasets/trips_v2.2')
-    trips = trips.iloc[:, 2:]  # remove start and end
-    # remove over_speed_limit (all NaN)
-    trips = trips.loc[:, trips.columns != 'over_speed_limit']
-    # fill NaN values with column mean
-    trips = trips.fillna(trips.mean())
+    # trips = read_csv_file('datasets/trips_v2.2')
+    # trips = trips.iloc[:, 2:]  # remove start and end
+    # # remove over_speed_limit (all NaN)
+    # trips = trips.loc[:, trips.columns != 'over_speed_limit']
+    # # fill NaN values with column mean
+    # trips = trips.fillna(trips.mean())
 
-    train_set = trips[:60]  # 60 rows
-    test_set = trips[60:]  # 15 rows
+    # train_set = trips[:60]  # 60 rows
+    # test_set = trips[60:]  # 15 rows
 
-    kmeans = KMeans(n_clusters=3, random_state=0).fit(train_set)
-    print(kmeans.labels_)
-    predicted = kmeans.predict(test_set)
-    print(predicted)
-    print(kmeans.cluster_centers_)
+    # kmeans = KMeans(n_clusters=3, random_state=0).fit(train_set)
+    # print(kmeans.labels_)
+    # predicted = kmeans.predict(test_set)
+    # print(predicted)
+    # print(kmeans.cluster_centers_)

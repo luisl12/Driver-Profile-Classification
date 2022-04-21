@@ -12,8 +12,8 @@ Running the Scripts
 -------------------
 
 1. Activate virtual environment.
-   * On Windows, use "cd Tests/.venv/Scripts".
-   * On Windows, use "activate" to activate the virtual environment (make sure you are in the "Tests/.venv/Scripts" directory).
+   * On Windows, use "cd .venv/Scripts".
+   * On Windows, use "activate" to activate the virtual environment (make sure you are in the ".venv/Scripts" directory).
    * On Windows, navigate back to tests directory "cd ../..".
 2. Try out the diferent sripts.
    * Use the following command "python name_of_the_script.py".

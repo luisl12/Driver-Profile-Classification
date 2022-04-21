@@ -24,9 +24,9 @@ def is_over_speed_limit(lat, lon, current_speed, radius=30):
     #  - maxspeed comes in km/h.
     #  - highway: highway type.
     #  - lanes: The number of traffic lanes for general purpose traffic, also
-    # for buses and other specific classes of vehicle.
+    #           for buses and other specific classes of vehicle.
     #  - overtaking: Specifying sections of roads where overtaking is legally
-    # forbidden.
+    #                forbidden.
 
     # initialize roads list
     roads = []
