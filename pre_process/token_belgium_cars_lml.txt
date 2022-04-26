@@ -1,6 +1,0 @@
-CardioID API Token
-Name: belgium_cars
-UUID: NYXtiaXhECp5iiUvqBpVhi
-Valid From: 2021-11-26T17:16:18.616324
-Valid To: 2022-02-24T17:16:18.616324
-Token: e29oPXxEnWMQWimKCBf6gz/UtjW22JeUGDR3566pMNus8

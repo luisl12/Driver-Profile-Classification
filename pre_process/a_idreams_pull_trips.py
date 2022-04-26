@@ -18,8 +18,30 @@ import pandas
 import requests
 
 
+def get_token(index=0):
+    """Get token from tokens file.
+
+    Parameters
+    ----------
+    index : str
+        Token index from the list of tokens.
+
+    Returns
+    -------
+    res : str
+        Token.
+
+    """
+
+    tokens = open("../private/tokens.json", "r")
+    data = json.load(tokens)
+    token = list(data)[index]['token']
+    tokens.close()
+    return token
+
+
 # ----- API Token -----
-TOKEN = 'e29oPXxEnWMQWimKCBf6gz/UtjW22JeUGDR3566pMNus8'
+TOKEN = get_token()
 
 
 # Globals

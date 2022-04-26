@@ -18,3 +18,11 @@ Running the Scripts
 2. Try out the diferent sripts.
    * Use the following command "python name_of_the_script.py".
 3. Press enter to run the script.
+
+
+Notes
+-----
+
+1. It is necessary to have an API token in order to run the script preprocess/a_idreams_pull_trips.py.
+2. Because the events are private, they have not been uploaded to the repository so the script preprocess/b_construct_dataset.py does not run.
+3. Only one dataset is available to make sure the repository is not overloaded with datasets.

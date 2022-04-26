@@ -117,7 +117,8 @@ def construct_dataset(folder, info):
             df = edit_me_aws_events(ev, df)
         elif e == 'ME_Car':
             # Includes the GPS (to get OpenStreetMapp overspeeding events)
-            df = edit_me_car_events(ev, df, False)
+            df = edit_me_car_events(ev, df, True)
+            break
         elif e == 'ME_FCW_Map':
             df = edit_me_fcw_map(ev, df)
         elif e == 'ME_HMW_Map':
@@ -665,7 +666,7 @@ def edit_me_car_events(ev, df, osm_speed=True):
             overspeed_df['ts'] = overspeed_df['ts'].dt.total_seconds()
 
             # linear interpolation
-            interpolated = overspeed_df.interpolate().reset_index().loc[speed_rows.index, :]
+            interpolated = overspeed_df.interpolate(method='time').reset_index().loc[speed_rows.index, :]
 
             # if first speed is null -> GPS first ts is < ME_Car ts
             if interpolated.loc[interpolated.index[0], 'speed']:
@@ -675,6 +676,8 @@ def edit_me_car_events(ev, df, osm_speed=True):
                     .head(1)['speed'].values[0],
                     inplace=True
                 )
+
+            store_csv('.', 'inter', interpolated)
 
             # line plot for me_car
             interpolated.plot(

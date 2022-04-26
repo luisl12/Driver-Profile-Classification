@@ -4,9 +4,19 @@
 env/
 venv/
 
-# Datasets and events
-*.csv
+# Events and datasets
+# *.csv
 trips/**/*.json
+trips/**/*.csv
+
+datasets/missing_values
+datasets/trips_v1.csv
+datasets/trips_v2.2.csv
+datasets/trips_v2.csv
+
+
+# Private files
+private/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
