@@ -627,13 +627,13 @@ def edit_me_car_events(ev, df, osm_speed=True):
         overspeed_df['speed'] = pd.to_numeric(overspeed_df['speed'])
 
         # line plot for gps
-        overspeed_df.plot(
+        ax = overspeed_df.plot(
             kind='line',
             x='ts',
             y='speed',
-            color='green'
+            color='green',
+            label='Speed'
         )
-        plt.title('Me_Car Speed')
 
         # read GPS table
         n_over_limit = None
@@ -659,14 +659,19 @@ def edit_me_car_events(ev, df, osm_speed=True):
             # get the rows that need to calculate the speed
             speed_rows = overspeed_df[overspeed_df['speed'].isnull()]
 
-            # convert ts to only seconds since trip started
-            position = overspeed_df.columns.get_loc('ts')
-            overspeed_df['ts'] = overspeed_df.iloc[1:, position] - \
-                overspeed_df.iat[0, position]
-            overspeed_df['ts'] = overspeed_df['ts'].dt.total_seconds()
+            # # convert ts to only seconds since trip started
+            # position = overspeed_df.columns.get_loc('ts')
+            # overspeed_df['ts'] = overspeed_df.iloc[1:, position] - \
+            #     overspeed_df.iat[0, position]
+            # overspeed_df['ts'] = overspeed_df['ts'].dt.total_seconds()
+
+            # make timestamp column the index (for the interpolate function)
+            overspeed_df.index = overspeed_df['ts']
+            del overspeed_df['ts']
 
             # linear interpolation
             interpolated = overspeed_df.interpolate(method='time').reset_index().loc[speed_rows.index, :]
+            print(interpolated)
 
             # if first speed is null -> GPS first ts is < ME_Car ts
             if interpolated.loc[interpolated.index[0], 'speed']:
@@ -677,29 +682,30 @@ def edit_me_car_events(ev, df, osm_speed=True):
                     inplace=True
                 )
 
-            store_csv('.', 'inter', interpolated)
-
             # line plot for me_car
             interpolated.plot(
                 kind='line',
                 x='ts',
                 y='speed',
-                color='blue'
+                color='blue',
+                label='Interpolated Speed',
+                ax=ax
             )
             plt.title('GPS Speed Interpolation')
+            plt.savefig('images/gps_speed_interpolation')
             plt.show()
 
             # count the number of speeding events
             # read lat and lon from GPS and speed from ME_Car
-            speed_values = interpolated.loc[speed_rows.index, 'speed']
-            print('Indexes', speed_rows.index)
-            print('Speed values', speed_values)
-            speed_limits = list(map(
-                is_over_speed_limit, gps_ev['lat'], gps_ev['lon'], speed_values
-            ))
-            print('Speed Limits:', speed_limits)
-            n_over_limit = sum(speed_limits)
-            print('Number over limit:', n_over_limit)
+            # speed_values = interpolated.loc[speed_rows.index, 'speed']
+            # print('Indexes', speed_rows.index)
+            # print('Speed values', speed_values)
+            # speed_limits = list(map(
+            #     is_over_speed_limit, gps_ev['lat'], gps_ev['lon'], speed_values
+            # ))
+            # print('Speed Limits:', speed_limits)
+            # n_over_limit = sum(speed_limits)
+            # print('Number over limit:', n_over_limit)
 
     # update dataframe
     df['n_high_beam'] = high_beam
@@ -764,9 +770,9 @@ def edit_me_ldw_map(ev, df):
     Computed geolocations of Mobileye LDW events.
 
     Generated features:
+        n_ldw (int): Number of LDW events
         n_ldw_left (int): Number of LDW left events
         n_ldw_right (int): Number of LDW rigth events
-        n_ldw (int): Number of LDW events
 
     Args:
         ev (pandas.DataFrame): ME_LDW_Map DataFrame
@@ -810,10 +816,6 @@ def edit_me_pcw_map(ev, df):
         n_pcw = len(ev)
     # update dataframe
     df['n_pcw'] = n_pcw
-    return df
-
-
-def edit_me_tsr(ev, df):
     return df
 
 
