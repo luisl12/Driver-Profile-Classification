@@ -171,9 +171,9 @@ Real-time overtaking intervention levels.
 ### Speeding Events
 Real-time speeding intervention levels.
 
-| Variable       | Description                                                 |
-| :------------- | :---------------------------------------------------------- |
-| n_speeding_0 | Number of speeding level 0 events no warning                  |
-| n_speeding_1 | Number of speeding level 1 events visual indication           |
-| n_speeding_2 | Number of speeding level 2 events visual speeding warning     |
-| n_speeding_3 | Number of speeding level 3 events visual and auditory warning |
+| Variable       | Description                                                  |
+| :------------- | :----------------------------------------------------------- |
+| n_speeding_0 | Number of speeding level 0, events no warning                  |
+| n_speeding_1 | Number of speeding level 1, events visual indication           |
+| n_speeding_2 | Number of speeding level 2, events visual speeding warning     |
+| n_speeding_3 | Number of speeding level 3, events visual and auditory warning |
