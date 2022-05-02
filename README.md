@@ -11,13 +11,17 @@ Working Python 3 installation (Python version = 3.7.9), with packages presented 
 Running the Scripts
 -------------------
 
-1. Activate virtual environment.
+1. Create virtual environment.
+   * On Windows, use "python -m venv .venv".
+2. Activate virtual environment.
    * On Windows, use "cd .venv/Scripts".
    * On Windows, use "activate" to activate the virtual environment (make sure you are in the ".venv/Scripts" directory).
    * On Windows, navigate back to tests directory "cd ../..".
-2. Try out the diferent sripts.
+3. Install requirements.
+   * On Windows, use "pip install -r requirements.txt".
+4. Try out the diferent sripts.
    * Use the following command "python name_of_the_script.py".
-3. Press enter to run the script.
+5. Press enter to run the script.
 
 
 Notes
