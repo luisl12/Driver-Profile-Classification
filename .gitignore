@@ -11,6 +11,7 @@ trips/**/*.csv
 
 datasets/missing_values
 datasets/trips_v1.csv
+datasets/trips_v2.1.csv
 datasets/trips_v2.2.csv
 datasets/trips_v2.csv
 

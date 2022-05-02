@@ -4,12 +4,19 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import json
-from sklearn.cluster import KMeans
 # local
 from b_open_street_map import is_over_speed_limit
 
 
-def read_all_trips(path):
+def read_all_trips_and_store_df(path, datasets_path, dataset_name):
+    """
+    Read all trips from folder and create dataset
+
+    Args:
+        path (str): Trips path
+        datasets_path (str): Datasets path
+        dataset_name (str): Dataset name
+    """
     dataset = None
     for _, subdirectories, _ in os.walk(path):
         for subdirectory in subdirectories:
@@ -23,17 +30,18 @@ def read_all_trips(path):
                 dataset = pd.concat([dataset, event])
             print('\n')
     print(dataset)
-    store_csv('../datasets', 'trips_v2.2', dataset)
+    store_csv(datasets_path, dataset_name, dataset)
 
 
 def read_csv_file(file):
-    """Read CSV file
+    """
+    Read CSV file
 
     Args:
         file (str): File path name
 
     Returns:
-        pandas.core.frame.DataFrame: Dataframe table
+        pandas.DataFrame: Dataframe table
     """
     try:
         data = pd.read_csv(file + '.csv')
@@ -45,25 +53,29 @@ def read_csv_file(file):
 
 
 def store_csv(path, dataset_name, dataset):
-    """Store trips dataset to CSV file.
-
-    Parameters
-    ----------
-    path : str
-        Path to storage location.
-    dataset_name : str
-        Dataset name.
-    dataset : pandas DataFrame
-        Dataset to store.
-
     """
+    Store trips dataset to CSV file.
 
+    Args:
+        path (str): Path to storage location
+        dataset_name (str): Dataset name
+        dataset (pandas.DataFrame): Dataset to store.
+    """
     fpath = os.path.join(path, '{}.csv'.format(dataset_name))
     date_fmt = '%Y-%m-%dT%H:%M:%S.%fZ'
     dataset.to_csv(fpath, header=True, index=False, date_format=date_fmt)
 
 
 def read_json_file(file):
+    """
+    Read json file
+
+    Args:
+        file (str): File name
+
+    Returns:
+        dict: Data in json file
+    """
     try:
         with open(file, 'r') as f:
             data = json.loads(f.read())
@@ -73,6 +85,16 @@ def read_json_file(file):
 
 
 def construct_dataset(folder, info):
+    """
+    Construct dataset with all the events available for each trip
+
+    Args:
+        folder (str): trip folder
+        info (dict): trip default info
+
+    Returns:
+        pandas.DataFrame: Dataset DataFrame
+    """
     dtypes = info['dtypes']
     del info['dtypes']
     del info['uuid']
@@ -89,10 +111,7 @@ def construct_dataset(folder, info):
         'iDreams_Speeding',  # Speeding Map is enough
     ]
     events = np.setdiff1d(dtypes, not_events)
-    # print('Events used for the dataset creation:')
-    # TODO: adicionar features normalizadas pelo (tempo/distancia)
-    # Cluster kmeans para tentar obter um label provisorio (baseline)
-    # pprint(events)
+
     for e in events:
         ev = read_csv_file(folder + e)
         if e == 'LOD_Event_Map':
@@ -118,7 +137,6 @@ def construct_dataset(folder, info):
         elif e == 'ME_Car':
             # Includes the GPS (to get OpenStreetMapp overspeeding events)
             df = edit_me_car_events(ev, df, True)
-            break
         elif e == 'ME_FCW_Map':
             df = edit_me_fcw_map(ev, df)
         elif e == 'ME_HMW_Map':
@@ -127,8 +145,6 @@ def construct_dataset(folder, info):
             df = edit_me_ldw_map(ev, df)
         elif e == 'ME_PCW_Map':
             df = edit_me_pcw_map(ev, df)
-        elif e == 'ME_TSR':
-            df = edit_me_tsr(ev, df)  # TODO: Não é necessário - Perguntar ???
         elif e == 'iDreams_Fatigue_Map':
             df = edit_idreams_fatigue(ev, df)
         elif e == 'iDreams_Headway_Map':
@@ -619,7 +635,6 @@ def edit_me_car_events(ev, df, osm_speed=True):
 
         # GPS overspeeding events
         overspeed_df = ev[['ts', 'speed']].copy()  # [100:105]
-        # overspeed_df.loc[len(overspeed_df.index)] = ['2021-04-21T06:39:58.722045+00:00', 65]
         print('ME_Car', overspeed_df)
 
         # convert columns to appropriate type
@@ -642,7 +657,7 @@ def edit_me_car_events(ev, df, osm_speed=True):
         if gps_ev is not None and osm_speed:
             gps_ts_speed = gps_ev[['ts']]  # [14:17]
             gps_ts_speed['speed'] = None
-            # gps_ts_speed.loc[len(gps_ts_speed.index)] = ['2021-04-21T06:39:57.722045+00:00', None]
+
             # convert columns to appropriate type
             gps_ts_speed['ts'] = pd.to_datetime(gps_ts_speed['ts'])
             gps_ts_speed['speed'] = pd.to_numeric(gps_ts_speed['speed'])
@@ -670,7 +685,8 @@ def edit_me_car_events(ev, df, osm_speed=True):
             del overspeed_df['ts']
 
             # linear interpolation
-            interpolated = overspeed_df.interpolate(method='time').reset_index().loc[speed_rows.index, :]
+            interpolated = overspeed_df.interpolate(method='time') \
+                .reset_index().loc[speed_rows.index, :]
             print(interpolated)
 
             # if first speed is null -> GPS first ts is < ME_Car ts
@@ -693,19 +709,19 @@ def edit_me_car_events(ev, df, osm_speed=True):
             )
             plt.title('GPS Speed Interpolation')
             plt.savefig('images/gps_speed_interpolation')
-            plt.show()
+            # plt.show()
 
             # count the number of speeding events
             # read lat and lon from GPS and speed from ME_Car
-            # speed_values = interpolated.loc[speed_rows.index, 'speed']
-            # print('Indexes', speed_rows.index)
-            # print('Speed values', speed_values)
-            # speed_limits = list(map(
-            #     is_over_speed_limit, gps_ev['lat'], gps_ev['lon'], speed_values
-            # ))
-            # print('Speed Limits:', speed_limits)
-            # n_over_limit = sum(speed_limits)
-            # print('Number over limit:', n_over_limit)
+            speed_values = interpolated.loc[speed_rows.index, 'speed']
+            print('Indexes', speed_rows.index)
+            print('Speed values', speed_values)
+            speed_limits = list(map(
+                is_over_speed_limit, gps_ev['lat'], gps_ev['lon'], speed_values
+            ))
+            print('Speed Limits:', speed_limits)
+            n_over_limit = sum(speed_limits)
+            print('Number over limit:', n_over_limit)
 
     # update dataframe
     df['n_high_beam'] = high_beam
@@ -983,25 +999,9 @@ if __name__ == "__main__":
 
     folder = '../trips/2021_04_21T05_42_57__25Kf7/'
     info = read_json_file(folder + 'info.json')
-    construct_dataset(folder, info)
-    # read_all_trips('./trips')
+    # construct_dataset(folder, info)
+    read_all_trips_and_store_df('../trips', '../datasets', 'trips_small_osm',)
 
     # trips_v2   -> Uma feature estava mal calculada
     # trips_v2.1 -> Timedeltas converted to seconds
     # trips_v2.2 -> light_mode converted to int (day=1, dusk=2, night=3)
-
-    # trips = read_csv_file('datasets/trips_v2.2')
-    # trips = trips.iloc[:, 2:]  # remove start and end
-    # # remove over_speed_limit (all NaN)
-    # trips = trips.loc[:, trips.columns != 'over_speed_limit']
-    # # fill NaN values with column mean
-    # trips = trips.fillna(trips.mean())
-
-    # train_set = trips[:60]  # 60 rows
-    # test_set = trips[60:]  # 15 rows
-
-    # kmeans = KMeans(n_clusters=3, random_state=0).fit(train_set)
-    # print(kmeans.labels_)
-    # predicted = kmeans.predict(test_set)
-    # print(predicted)
-    # print(kmeans.cluster_centers_)
