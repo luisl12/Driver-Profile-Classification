@@ -1,11 +1,18 @@
 # packages
 import os
+import datetime
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import json
 # local
-from b_open_street_map import is_over_speed_limit
+from .b_open_street_map import is_over_speed_limit
+from .a_idreams_pull_trips import (
+    parse_input_date,
+    get_vehicles,
+    get_vehicle_trips,
+    get_trip_data
+)
 
 
 def read_all_trips_and_store_df(path, datasets_path, dataset_name):
@@ -31,6 +38,57 @@ def read_all_trips_and_store_df(path, datasets_path, dataset_name):
             print('\n')
     print(dataset)
     store_csv(datasets_path, dataset_name, dataset)
+
+
+def pull_trips_and_store_df(datasets_path, dataset_name, ti_str, tf_str=None):
+    """
+    Pull trips from the Cardio-ID API and create dataset
+
+    Args:
+        datasets_path (str): Datasets path
+        dataset_name (str): Dataset name
+        ti_str (str): Query start date string
+        tf_str (str): Query end date string; if None, defaults to current time
+    """
+
+    # parse dates
+    try:
+        ti = parse_input_date(ti_str)
+    except ValueError:
+        print('Could not parse query start date, expected format is YYYY-MM-DD.')
+        return
+
+    if tf_str is None:
+        tf = datetime.datetime.utcnow()
+    else:
+        try:
+            tf = parse_input_date(tf_str)
+        except ValueError:
+            print('Could not parse query end date, expected format is YYYY-MM-DD.')
+            return
+        else:
+            # change to end of day
+            tf = tf.replace(hour=23, minute=59)
+
+    print('Requesting trips from {} to {}.'.format(ti.isoformat(), tf.isoformat()))
+
+    vehicles = get_vehicles()
+    n = 0
+    dataset = None
+
+    for v in vehicles:
+        trips = get_vehicle_trips(v['uuid'], ti, tf)
+        for t in trips:
+            print(v['uuid'], t['uuid'])
+            trip_data = get_trip_data(t['uuid'])
+            dtype_df = construct_dataset(trip_data['data'], t)
+            if dataset is None:
+                dataset = dtype_df
+            else:
+                dataset = pd.concat([dataset, dtype_df])
+            n += 1
+    store_csv(datasets_path, dataset_name, dataset)
+    print('Downloaded {} trips.'.format(n))
 
 
 def read_csv_file(file):
@@ -61,9 +119,10 @@ def store_csv(path, dataset_name, dataset):
         dataset_name (str): Dataset name
         dataset (pandas.DataFrame): Dataset to store.
     """
-    fpath = os.path.join(path, '{}.csv'.format(dataset_name))
-    date_fmt = '%Y-%m-%dT%H:%M:%S.%fZ'
-    dataset.to_csv(fpath, header=True, index=False, date_format=date_fmt)
+    if dataset is not None:
+        fpath = os.path.join(path, '{}.csv'.format(dataset_name))
+        date_fmt = '%Y-%m-%dT%H:%M:%S.%fZ'
+        dataset.to_csv(fpath, header=True, index=False, date_format=date_fmt)
 
 
 def read_json_file(file):
@@ -84,13 +143,27 @@ def read_json_file(file):
         print('No such file:', file)
 
 
-def construct_dataset(folder, info):
+def join_datasets(df1, df2):
+    """
+    Concatenate datasets by rows
+
+    Args:
+        df1 (pandas.DataFrame): Dataset 1
+        df2 (pandas.DataFrame): Dataset 2
+
+    Returns:
+        pandas.DataFrame: Dataset DataFrame
+    """
+    return pd.concat([df1, df2])
+
+
+def construct_dataset(data, info):
     """
     Construct dataset with all the events available for each trip
 
     Args:
-        folder (str): trip folder
-        info (dict): trip default info
+        data (dict): Trip data
+        info (dict): Trip default info
 
     Returns:
         pandas.DataFrame: Dataset DataFrame
@@ -113,7 +186,8 @@ def construct_dataset(folder, info):
     events = np.setdiff1d(dtypes, not_events)
 
     for e in events:
-        ev = read_csv_file(folder + e)
+        # ev = read_csv_file(folder + e)
+        ev = pd.DataFrame(data[e])
         if e == 'LOD_Event_Map':
             # TODO: Confirmar se se a mao ficar no volante se continuam a
             # receber sinais ou é só no 1º contato
@@ -136,7 +210,7 @@ def construct_dataset(folder, info):
             df = edit_me_aws_events(ev, df)
         elif e == 'ME_Car':
             # Includes the GPS (to get OpenStreetMapp overspeeding events)
-            df = edit_me_car_events(ev, df, True)
+            df = edit_me_car_events(ev, df, False)
         elif e == 'ME_FCW_Map':
             df = edit_me_fcw_map(ev, df)
         elif e == 'ME_HMW_Map':
@@ -153,7 +227,6 @@ def construct_dataset(folder, info):
             df = edit_idreams_overtaking(ev, df)
         elif e == 'iDreams_Speeding_Map':
             df = edit_idreams_speeding(ev, df)
-    print(df)
     return df
 
 
@@ -635,20 +708,20 @@ def edit_me_car_events(ev, df, osm_speed=True):
 
         # GPS overspeeding events
         overspeed_df = ev[['ts', 'speed']].copy()  # [100:105]
-        print('ME_Car', overspeed_df)
+        # print('ME_Car', overspeed_df)
 
         # convert columns to appropriate type
         overspeed_df['ts'] = pd.to_datetime(overspeed_df['ts'])
         overspeed_df['speed'] = pd.to_numeric(overspeed_df['speed'])
 
         # line plot for gps
-        ax = overspeed_df.plot(
-            kind='line',
-            x='ts',
-            y='speed',
-            color='green',
-            label='Speed'
-        )
+        # ax = overspeed_df.plot(
+        #     kind='line',
+        #     x='ts',
+        #     y='speed',
+        #     color='green',
+        #     label='Speed'
+        # )
 
         # read GPS table
         n_over_limit = None
@@ -669,7 +742,7 @@ def edit_me_car_events(ev, df, osm_speed=True):
             # drop=True makes sure old indexes are not added as new column
             overspeed_df = overspeed_df.sort_values(by='ts') \
                 .reset_index(drop=True)
-            print('Sorted', overspeed_df)
+            # print('Sorted', overspeed_df)
 
             # get the rows that need to calculate the speed
             speed_rows = overspeed_df[overspeed_df['speed'].isnull()]
@@ -687,7 +760,7 @@ def edit_me_car_events(ev, df, osm_speed=True):
             # linear interpolation
             interpolated = overspeed_df.interpolate(method='time') \
                 .reset_index().loc[speed_rows.index, :]
-            print(interpolated)
+            # print(interpolated)
 
             # if first speed is null -> GPS first ts is < ME_Car ts
             if interpolated.loc[interpolated.index[0], 'speed']:
@@ -698,30 +771,30 @@ def edit_me_car_events(ev, df, osm_speed=True):
                     inplace=True
                 )
 
-            # line plot for me_car
-            interpolated.plot(
-                kind='line',
-                x='ts',
-                y='speed',
-                color='blue',
-                label='Interpolated Speed',
-                ax=ax
-            )
-            plt.title('GPS Speed Interpolation')
-            plt.savefig('images/gps_speed_interpolation')
+            # # line plot for me_car
+            # interpolated.plot(
+            #     kind='line',
+            #     x='ts',
+            #     y='speed',
+            #     color='blue',
+            #     label='Interpolated Speed',
+            #     ax=ax
+            # )
+            # plt.title('GPS Speed Interpolation')
+            # plt.savefig('images/gps_speed_interpolation')
             # plt.show()
 
             # count the number of speeding events
             # read lat and lon from GPS and speed from ME_Car
             speed_values = interpolated.loc[speed_rows.index, 'speed']
-            print('Indexes', speed_rows.index)
-            print('Speed values', speed_values)
+            # print('Indexes', speed_rows.index)
+            # print('Speed values', speed_values)
             speed_limits = list(map(
                 is_over_speed_limit, gps_ev['lat'], gps_ev['lon'], speed_values
             ))
-            print('Speed Limits:', speed_limits)
+            # print('Speed Limits:', speed_limits)
             n_over_limit = sum(speed_limits)
-            print('Number over limit:', n_over_limit)
+            # print('Number over limit:', n_over_limit)
 
     # update dataframe
     df['n_high_beam'] = high_beam
@@ -1000,7 +1073,33 @@ if __name__ == "__main__":
     folder = '../trips/2021_04_21T05_42_57__25Kf7/'
     info = read_json_file(folder + 'info.json')
     # construct_dataset(folder, info)
-    read_all_trips_and_store_df('../trips', '../datasets', 'trips_small_osm',)
+    # read_all_trips_and_store_df('../trips', '../datasets', 'trips_small_osm')
+
+    # pull_trips_and_store_df(
+    #     '../datasets/constructed', 'trips_2022-04-2_2022-05-13', '2022-04-2'
+    # )
+
+    df1_name = '../datasets/constructed/trips_2021-04-1_2021-07-1'
+    df2_name = '../datasets/constructed/trips_2021-07-2_2021-10-1'
+    df1 = read_csv_file(df1_name)
+    df2 = read_csv_file(df2_name)
+    trips = join_datasets(df1, df2)
+
+    df2_name = '../datasets/constructed/trips_2021-10-2_2022-01-1'
+    df2 = read_csv_file(df2_name)
+    trips = join_datasets(trips, df2)
+
+    df2_name = '../datasets/constructed/trips_2022-01-2_2022-04-1'
+    df2 = read_csv_file(df2_name)
+    trips = join_datasets(trips, df2)
+
+    df2_name = '../datasets/constructed/trips_2022-04-2_2022-05-13'
+    df2 = read_csv_file(df2_name)
+    trips = join_datasets(trips, df2)
+
+    print(trips.shape)
+
+    store_csv('../datasets/constructed', 'trips_until_2022-05-13', trips)
 
     # trips_v2   -> Uma feature estava mal calculada
     # trips_v2.1 -> Timedeltas converted to seconds

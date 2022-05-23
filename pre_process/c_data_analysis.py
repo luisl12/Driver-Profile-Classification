@@ -5,9 +5,8 @@ import seaborn as sns
 from b_construct_dataset import read_csv_file
 
 
-folder = '../datasets/trips_v2.1'
-trips = read_csv_file(folder)
-
+dataset = '../datasets/constructed/trips_until_2022-05-13'
+trips = read_csv_file(dataset)
 
 print("------------------- Dataset ------------------- \n")
 print(trips, "\n")
