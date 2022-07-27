@@ -339,7 +339,7 @@ if __name__ == "__main__":
         'clf__min_samples_split': [0.2, 0.4, 0.6, 0.8, 1.0],
         'clf__min_samples_leaf': [0.1, 0.2, 0.3, 0.4, 0.5],
         'clf__max_features': [0.2, 0.4, 0.6, 0.8, 1.0, 'sqrt', 'log2'],
-        # 'smote__k_neighbors': [3, 5, 7, 9]
+        'over__k_neighbors': [2, 4, 6, 8, 10]
     }
             
     rfc_grid = {
@@ -348,8 +348,8 @@ if __name__ == "__main__":
         'clf__max_depth': [2, 4, 6, 8, 10],
         'clf__min_samples_split': [0.2, 0.4, 0.6, 0.8, 1.0],
         'clf__min_samples_leaf': [0.1, 0.2, 0.3, 0.4, 0.5],
-        'clf__max_features': [0.2, 0.4, 0.6, 0.8, 1.0, 'sqrt', 'log2', None]
-        # 'svm_smote__k_neighbors': [3, 5, 7, 9]
+        'clf__max_features': [0.2, 0.4, 0.6, 0.8, 1.0, 'sqrt', 'log2', None],
+        'over_smote__k_neighbors': [2, 4, 6, 8, 10]
     }
     xgbc_grid = {
         'clf__n_estimators':[50, 100, 150],
@@ -362,14 +362,14 @@ if __name__ == "__main__":
     }
 
     algs = {
-        # 'decision_tree': dtc,
+        'decision_tree': dtc,
         # 'random_forest': rfc,
-        'xgboost': xgbc
+        # 'xgboost': xgbc
     }
     grids = {
-        # 'decision_tree': dtc_grid,
+        'decision_tree': dtc_grid,
         # 'random_forest': rfc_grid,
-        'xgboost': xgbc_grid
+        # 'xgboost': xgbc_grid
     }
 
     # define number of cross validations
@@ -380,7 +380,7 @@ if __name__ == "__main__":
 
         # define imblearn pipeline
         pipeline = IMBPipeline(steps=[
-            ('resample', ADASYN()),
+            ('over', BorderlineSMOTE()),
             # ('under', RandomUnderSampler(sampling_strategy=0.5)),
             ('clf', algs[a])
         ])
@@ -393,7 +393,7 @@ if __name__ == "__main__":
 
         # --------------------------- TRAIN MODEL WITH BEST PARAMS --------------------------- #
 
-        path = './images/supervised/{}/best_resample/adasyn/'.format(a)
+        path = './images/supervised/{}/best_resample/adasyn_'.format(a)
         cross_validation(X_train, y_train, pipeline, cv=cv, path=path)
         # model = find_best_estimator(X_train, y_train, pipeline, grids[a], parameter_cv, path=None)
         # tree_structure(model)

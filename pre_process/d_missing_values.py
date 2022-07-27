@@ -26,7 +26,6 @@ Strategy taken (when it is not impossible to calculate a value):
 import pandas as pd
 # local
 from .b_construct_dataset import read_csv_file, store_csv
-from .d_trip_light import calculate_time_interval
 from .d_trip_light_mode import get_light_mode
 
 
