@@ -1,0 +1,108 @@
+cluster 0:
+	- distancia: andam menos que o 1
+
+	- duracao: têm menos duracao que o 1
+
+	- harsh: tem menos eventos de harsh aceleraçao, igual de harsh braking e menos de harsh cornering.
+	Os eventos não são tao proximos da media
+
+	- ignicoes: são os 2 clusters parecidos
+
+	- peoes em perigo: mete mais vezes peoes em perigo
+
+	- modo de luz: conduz e dia o cluster 1 conduz de noite
+
+	- excesso velocidade tsr: tem menos eventos que ultrapassam o limite dos sinais de transito
+
+	- velocidade 0: tem o carro parado mais vezes (embora pouca diferença), mas passa menos tempo com o carro parado
+
+	- funçoes do carro: usa mais vezes mas sao os 2 parecidos
+
+	- travoes: usa mais vezes mas sao os 2 parecidos
+
+	- velocidade media: tem menos velocidade media
+
+	- fcw: tem mais eventos mas sao os 2 parecidos
+
+	- hmw: tem mais eventos mas sao os 2 parecidos
+
+	- ldw: tem menos eventos mas sao os 2 parecidos
+
+	- pcw: tem mais eventos mas sao os 2 parecidos
+
+	- fadiga: são os 2 clusters parecidos
+
+	- headway: tem mais eventos que o 1
+
+	- overtaking: são os 2 clusters parecidos mas tem menos que o 2
+
+	- aceleraçoes com excesso: menos aceleraçoes em media
+
+
+
+
+
+
+variaveis importantes (com diferenças consideraveis entre os dois):
+
+distancia # - Cluster 2 têm viagens com maior distancia
+
+duracao # - Cluster 2 têm viagens com maior duraçao
+
+n_ha - Cluster 2 têm viagens com mais eventos de harsh aceleration
+n_hc - Cluster 2 têm viagens com mais eventos de harsh cornering
+n_hc_l - Cluster 2 têm viagens com mais eventos de harsh cornering low
+n_hc_m - Cluster 2 têm viagens com mais eventos de harsh cornering medium
+
+hmw_time # - No cluster 1 as viagens têm mais tempo de hmw 
+
+n_pedestrian_dz # - No cluster 1 as viagens apanham mais peoes em zona de perigo
+
+light_mode # - O cluster 1 conduz de mais de dia o 2 mais à noite
+
+n_tsr_level - O cluster 2 tem mais eventos de ultrapassagem do sinal de velocidade
+n_tsr_level_0
+n_tsr_level_1
+n_tsr_level_2
+n_tsr_level_3
+n_tsr_level_4
+n_tsr_level_5
+n_tsr_level_6
+
+zero_speed_time # - O cluster 2 passa mais tempo parado
+
+n_wipers - 
+n_signal_right
+n_signal_left
+n_brakes
+
+speed # -  O cluster 2 tem viagens com a velocidade média mais alta que o 1
+
+n_headway__1 - O cluster 1 tem mais eventos de headway
+n_headway_1
+n_headway_2
+
+n_speeding_0 - O cluster 2 tem mais eventos de excesso de velocidade
+n_speeding_1
+n_speeding_2
+n_speeding_3
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

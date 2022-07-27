@@ -227,6 +227,33 @@ def construct_dataset(data, info):
             df = edit_idreams_overtaking(ev, df)
         elif e == 'iDreams_Speeding_Map':
             df = edit_idreams_speeding(ev, df)
+        elif e == 'GPS':
+            df = edit_gps_event(ev, df)
+    return df
+
+
+def edit_gps_event(ev, df):
+    """
+    Event indicating the trip start coordinates.
+
+    Generated features:
+        lat (int): Latitude
+        lon (int): Longitude
+
+    Args:
+        ev (pandas.DataFrame): GPS DataFrame
+        df (pandas.DataFrame): Dataset DataFrame
+
+    Returns:
+        pandas.DataFrame: Dataset updated
+    """
+    lat = lon = None
+    if ev is not None:
+        lat = ev['lat'].iloc[0]
+        lon = ev['lon'].iloc[0]
+    # update dataframe
+    df['lat'] = lat
+    df['lon'] = lon
     return df
 
 
@@ -557,12 +584,7 @@ def edit_me_aws_events(ev, df):
         vals, counts = np.unique(ev['time_indicator'], return_counts=True)
         index = np.argmax(counts)
         light_mode = vals[index]
-        # if light_mode == 'day':
-        #     light_mode = 1
-        # elif light_mode == 'dusk':
-        #     light_mode = 2
-        # elif light_mode == 'night':
-        #     light_mode = 3
+        print(light_mode)
 
         # Para o tsr:
         # 1 - Calcular o numero de vezes que ultrapassou o speed limit
@@ -625,7 +647,7 @@ def edit_me_aws_events(ev, df):
     return df
 
 
-def edit_me_car_events(ev, df, osm_speed=True):
+def edit_me_car_events(ev, df, osm_speed=True, gps_folder=''):
     """
     Gives information about the about the car parameters needed for the
     Mobileye system.
@@ -725,7 +747,7 @@ def edit_me_car_events(ev, df, osm_speed=True):
 
         # read GPS table
         n_over_limit = None
-        gps_ev = read_csv_file(folder + 'GPS')
+        gps_ev = read_csv_file(gps_folder + 'GPS')
 
         if gps_ev is not None and osm_speed:
             gps_ts_speed = gps_ev[['ts']]  # [14:17]
@@ -1070,36 +1092,34 @@ def edit_idreams_speeding(ev, df):
 
 if __name__ == "__main__":
 
-    folder = '../trips/2021_04_21T05_42_57__25Kf7/'
-    info = read_json_file(folder + 'info.json')
-    # construct_dataset(folder, info)
-    # read_all_trips_and_store_df('../trips', '../datasets', 'trips_small_osm')
+    # folder = '../trips/2021_04_21T05_42_57__25Kf7/'
+    # info = read_json_file(folder + 'info.json')
 
-    # pull_trips_and_store_df(
-    #     '../datasets/constructed', 'trips_2022-04-2_2022-05-13', '2022-04-2'
-    # )
+    pull_trips_and_store_df(
+        '../datasets/constructed', 'trips_test_2022-05-14_2022-07-20', '2022-05-14', None
+    )
 
-    df1_name = '../datasets/constructed/trips_2021-04-1_2021-07-1'
-    df2_name = '../datasets/constructed/trips_2021-07-2_2021-10-1'
-    df1 = read_csv_file(df1_name)
-    df2 = read_csv_file(df2_name)
-    trips = join_datasets(df1, df2)
+    # df1_name = '../datasets/constructed/trips_2021-04-1_2021-07-1'
+    # df2_name = '../datasets/constructed/trips_2021-07-2_2021-10-1'
+    # df1 = read_csv_file(df1_name)
+    # df2 = read_csv_file(df2_name)
+    # trips = join_datasets(df1, df2)
 
-    df2_name = '../datasets/constructed/trips_2021-10-2_2022-01-1'
-    df2 = read_csv_file(df2_name)
-    trips = join_datasets(trips, df2)
+    # df2_name = '../datasets/constructed/trips_2021-10-2_2022-01-1'
+    # df2 = read_csv_file(df2_name)
+    # trips = join_datasets(trips, df2)
 
-    df2_name = '../datasets/constructed/trips_2022-01-2_2022-04-1'
-    df2 = read_csv_file(df2_name)
-    trips = join_datasets(trips, df2)
+    # df2_name = '../datasets/constructed/trips_2022-01-2_2022-04-1'
+    # df2 = read_csv_file(df2_name)
+    # trips = join_datasets(trips, df2)
 
-    df2_name = '../datasets/constructed/trips_2022-04-2_2022-05-13'
-    df2 = read_csv_file(df2_name)
-    trips = join_datasets(trips, df2)
+    # df2_name = '../datasets/constructed/trips_2022-04-2_2022-05-13'
+    # df2 = read_csv_file(df2_name)
+    # trips = join_datasets(trips, df2)
 
-    print(trips.shape)
+    # print(trips.shape)
 
-    store_csv('../datasets/constructed', 'trips_until_2022-05-13', trips)
+    # store_csv('../datasets/constructed', 'trips_until_2022-05-13', trips)
 
     # trips_v2   -> Uma feature estava mal calculada
     # trips_v2.1 -> Timedeltas converted to seconds

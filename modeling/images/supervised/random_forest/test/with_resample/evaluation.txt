@@ -1,0 +1,17 @@
+Accuracy: 0.8857293312269615 
+Precision: 0.8942857142857142 
+Recall: 0.6348884381338742 
+F1: 0.7425860023724793 
+Number of TP: 313 
+Number of TN: 1369 
+Number of FP: 37 
+Number of FN: 180 
+ 
+              precision    recall  f1-score   support
+
+           0       0.88      0.97      0.93      1406
+           1       0.89      0.63      0.74       493
+
+    accuracy                           0.89      1899
+   macro avg       0.89      0.80      0.83      1899
+weighted avg       0.89      0.89      0.88      1899

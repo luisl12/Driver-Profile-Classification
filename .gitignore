@@ -9,11 +9,10 @@ venv/
 trips/**/*.json
 trips/**/*.csv
 
+datasets/constructed
+datasets/categorical_data
 datasets/missing_values
-datasets/trips_v1.csv
-datasets/trips_v2.1.csv
-datasets/trips_v2.2.csv
-datasets/trips_v2.csv
+datasets/normalization
 
 
 # Private files

@@ -1,0 +1,20 @@
+------------ manhattan DISTANCE ------------
+N instances belonging to cluster -1: 553
+N instances belonging to cluster 0: 14033
+Calinski score: 10027.67872687498
+Davies-Bouldin score: 0.68209691380774
+Silhouette score: 0.777381473169546
+
+------------ cosine DISTANCE ------------
+N instances belonging to cluster -1: 49
+N instances belonging to cluster 0: 14537
+Calinski score: 57.30973681942532
+Davies-Bouldin score: 1.4068987591714301
+Silhouette score: 0.17649389484443773
+
+------------ euclidean DISTANCE ------------
+N instances belonging to cluster -1: 614
+N instances belonging to cluster 0: 13972
+Calinski score: 10596.378794029326
+Davies-Bouldin score: 0.6832515730469124
+Silhouette score: 0.7724299568306124

@@ -1,0 +1,49 @@
+
+KMEANS - MINMAX - PCA
+------------ EUCLIDEAN_SQUARE DISTANCE ------------ BEST
+N instances belonging to cluster 0: 1950 
+N instances belonging to cluster 1: 12636 
+Calinski score: 5282.126911727486 
+Davies-Bouldin score: 1.3209442693589513 
+Silhouette score: 0.5447199662433038 
+
+GAUSSIAN - MINMAX - PCA
+------------ spherical COVARIANCE ------------
+N instances belonging to cluster 0: 4769 
+N instances belonging to cluster 1: 9817 
+Calinski score: 3892.2022844784246 
+Davies-Bouldin score: 1.605424083158374 
+Silhouette score: 0.37596807119147163
+
+DBSCAN - MINMAX - SVD
+------------ euclidean DISTANCE ------------
+N instances belonging to cluster -1: 619 
+N instances belonging to cluster 0: 13821 
+N instances belonging to cluster 1: 146 
+Calinski score: 1544.7925806074682 
+Davies-Bouldin score: 1.4885195247781946 
+Silhouette score: 0.35840867430482704 
+
+CONSENSUS KMEANS - MINMAX - PCA
+------------------------------------------- BEST
+N instances belonging to cluster 0: 60 
+N instances belonging to cluster 1: 14526 
+Calinski score: 1707.0876693383773 
+Davies-Bouldin score: 0.7762784852373504 
+Silhouette score: 0.8158570433249526
+
+CONSENSUS KMEANS MIX - MINMAX - PCA
+-------------------------------------------
+N instances belonging to cluster 0: 509 
+N instances belonging to cluster 1: 14077 
+Calinski score: 2554.827379066907 
+Davies-Bouldin score: 1.3987552387201572 
+Silhouette score: 0.7072326307229051 
+
+CONSENSUS GAUSSIAN - MINMAX - PCA
+-------------------------------------------
+N instances belonging to cluster 0: 5552 
+N instances belonging to cluster 1: 9034 
+Calinski score: 3507.6409654813137 
+Davies-Bouldin score: 1.6410279676493522 
+Silhouette score: 0.3216344307906344 

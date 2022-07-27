@@ -1,0 +1,30 @@
+------------ Covariance full ------------
+N instances belonging to cluster 0: 1784
+N instances belonging to cluster 1: 5322
+N instances belonging to cluster 2: 7480
+Calinski score: 3212.2873349695956
+Davies-Bouldin score: 1.5644602353115815
+Silhouette score: 0.18298566103536903
+
+------------ Covariance tied ------------
+N instances belonging to cluster 0: 2697
+N instances belonging to cluster 1: 11889
+Calinski score: 10861.386109708725
+Davies-Bouldin score: 0.817071400838829
+Silhouette score: 0.617928719047862    
+
+------------ Covariance diag ------------
+N instances belonging to cluster 0: 1740
+N instances belonging to cluster 1: 7226
+N instances belonging to cluster 2: 5620
+Calinski score: 9057.302582786155
+Davies-Bouldin score: 0.9092660933683226
+Silhouette score: 0.41466557728475545   
+
+------------ Covariance spherical ------------
+N instances belonging to cluster 0: 1079
+N instances belonging to cluster 1: 8074
+N instances belonging to cluster 2: 5433
+Calinski score: 10883.524767614588
+Davies-Bouldin score: 0.8570890642198817
+Silhouette score: 0.4623140856346607

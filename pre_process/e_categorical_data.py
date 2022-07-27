@@ -18,10 +18,10 @@ We apply Label Encoding when:
 """
 
 # packages
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import OrdinalEncoder
 import pandas as pd
 # local
-from b_construct_dataset import read_csv_file, store_csv
+from .b_construct_dataset import read_csv_file, store_csv
 
 
 def label_enconding(trips):
@@ -37,8 +37,8 @@ def label_enconding(trips):
         pandas.DataFrame: Dataset updated
     """
     df = trips.copy()
-    le = LabelEncoder()
-    df['light_mode'] = le.fit_transform(df['light_mode'])
+    le = OrdinalEncoder()
+    df[['light_mode']] = le.fit_transform(df[['light_mode']])
     return df
 
 
@@ -65,15 +65,17 @@ def one_hot_encoding(trips):
 if __name__ == "__main__":
 
     # read dataset
-    trips = read_csv_file('../datasets/missing_values/trips_mv')
+    trips = read_csv_file('../datasets/missing_values/trips_mv_test')
 
     df_label_encoding = label_enconding(trips)
-    store_csv(
-        '../datasets/categorical_data', 'trips_label_encoding',
-        df_label_encoding
-    )
-    df_one_hot_encoding = one_hot_encoding(trips)
-    store_csv(
-        '../datasets/categorical_data', 'trips_one_hot_encoding',
-        df_one_hot_encoding
-    )
+
+    # store_csv(
+    #     '../datasets/categorical_data', 'trips_label_encoding_test',
+    #     df_label_encoding
+    # )
+
+    # df_one_hot_encoding = one_hot_encoding(trips)
+    # store_csv(
+    #     '../datasets/categorical_data', 'trips_one_hot_encoding',
+    #     df_one_hot_encoding
+    # )

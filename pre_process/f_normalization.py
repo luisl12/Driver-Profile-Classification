@@ -30,7 +30,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 # local
-from b_construct_dataset import read_csv_file, store_csv
+from .b_construct_dataset import read_csv_file, store_csv
 
 
 def standard_scaler(df, with_mean=True, with_std=True):
@@ -237,6 +237,7 @@ def normalize_by_distance(df):
         pandas.DataFrame: Dataset normalized
     """
     trips = df.div(df['distance'], axis=0)
+    trips = trips.drop('distance', 1)
     return trips
 
 
@@ -252,6 +253,7 @@ def normalize_by_duration(df):
         pandas.DataFrame: Dataset normalized
     """
     trips = df.div(df['duration'], axis=0)
+    trips = trips.drop('duration', 1)
     return trips
 
 

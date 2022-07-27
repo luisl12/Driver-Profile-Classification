@@ -23,12 +23,11 @@ Strategy taken (when it is not impossible to calculate a value):
 """
 
 # packages
-import matplotlib.pyplot as plt
 import pandas as pd
-import seaborn as sns
 # local
-from b_construct_dataset import read_csv_file, store_csv
-from d_trip_light import calculate_time_interval
+from .b_construct_dataset import read_csv_file, store_csv
+from .d_trip_light import calculate_time_interval
+from .d_trip_light_mode import get_light_mode
 
 
 def fill_hands_on_missing_values(df, column_names):
@@ -261,7 +260,10 @@ def fill_me_aws_missing_values(df, column_names):
         dataset['trip_start'] = pd.to_datetime(dataset['trip_start'])
         dataset['trip_end'] = pd.to_datetime(dataset['trip_end'])
         for i, row in dataset.iterrows():
-            dataset.at[i, 'light_mode'] = calculate_time_interval(row)
+            print(row)
+            print(dataset.at[i, 'light_mode'])
+            print(get_light_mode(row))
+            dataset.at[i, 'light_mode'] = get_light_mode(row)
         df['light_mode'] = df['light_mode'].fillna(dataset['light_mode'])
     if 'n_tsr_level' in column_names:
         # median
@@ -351,6 +353,10 @@ def fill_me_aws_missing_values(df, column_names):
                 .fillna(df['n_zero_speed'].median())
         elif per >= 0.5:
             del df['n_zero_speed']
+    if 'lat' in df.columns:
+        del df['lat']
+    if 'lon' in df.columns:
+        del df['lon']
     return df
 
 
@@ -659,14 +665,35 @@ def check_columns_with_nulls(df):
     """
     # check columns with null values
     columns_nan = df.columns[df.isnull().any()].tolist()
-    print("Columns with NaN values:", columns_nan, len(columns_nan))
     return columns_nan
+
+
+def fill_missing_values(trips, columns_nan):
+
+    # fill missing values
+    trips = fill_hands_on_missing_values(trips, columns_nan)
+    trips = fill_drowsiness_missing_values(trips, columns_nan)
+    trips = fill_driving_events_missing_values(trips, columns_nan)
+    trips = fill_distraction_missing_values(trips, columns_nan)
+    trips = fill_ignition_missing_values(trips, columns_nan)
+    trips = fill_me_aws_missing_values(trips, columns_nan)
+    trips = fill_me_car_missing_values(trips, columns_nan)
+    trips = fill_me_fcw_missing_values(trips, columns_nan)
+    trips = fill_me_hmw_missing_values(trips, columns_nan)
+    trips = fill_me_ldw_missing_values(trips, columns_nan)
+    trips = fill_me_pcw_missing_values(trips, columns_nan)
+    trips = fill_idreams_fatigue_missing_values(trips, columns_nan)
+    trips = fill_idreams_headway_missing_values(trips, columns_nan)
+    trips = fill_idreams_overtaking_missing_values(trips, columns_nan)
+    trips = fill_idreams_speeding_missing_values(trips, columns_nan)
+    return trips
+
 
 
 if __name__ == "__main__":
 
     # read dataset
-    trips = read_csv_file('../datasets/constructed/trips_until_2022-05-13')
+    trips = read_csv_file('../datasets/constructed/trips_test_2022-05-14_2022-07-20')
 
     # remove columns/rows that have all values NaN
     trips = delete_missing_values(trips)
@@ -696,29 +723,4 @@ if __name__ == "__main__":
 
     if len(columns_nan) == 0:
         # store dataset
-        store_csv('../datasets/missing_values', 'trips_mv', trips)
-
-    # pd.options.display.float_format = '{:,.3f}'.format
-    # plt.figure(figsize=(20, 20))
-    # # annot_kws={'size': 5}
-    # # annot=True
-    # correlation = trips.corr()
-    # sns.heatmap(
-    #     correlation, linewidths=.3, vmax=1, vmin=-1, center=0, cmap='vlag'
-    # )
-    # correlation = correlation.unstack()
-    # correlation = correlation[abs(correlation) >= 0.7]
-    # plt.show()
-
-    # print(correlation.to_string())
-
-    # # test kmeans
-    # trips = trips.iloc[:, 2:]  # remove start and end
-    # train_set = trips[:60]  # 60 rows
-    # test_set = trips[60:]  # 15 rows
-
-    # kmeans = KMeans(n_clusters=3, random_state=0).fit(train_set)
-    # print(kmeans.labels_)
-    # predicted = kmeans.predict(test_set)
-    # print(predicted)
-    # print(kmeans.cluster_centers_)
+        store_csv('../datasets/missing_values', 'trips_mv_test', trips)
