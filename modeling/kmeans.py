@@ -71,6 +71,7 @@ class KmeansClustering:
         return y_pred
 
     def visualize_clusters(self, data, y_pred, show=False, path=None):
+        dim = True
         # show clusters
         if data.shape[1] > 2:
             fig = plt.figure(figsize=(10, 10))
@@ -82,18 +83,22 @@ class KmeansClustering:
             axis.set_ylabel(data.columns[1], fontsize=10)
             axis.set_zlabel(data.columns[2], fontsize=10)
             plt.legend(*sc.legend_elements(), loc=1, title='Clusters')
-        else:
+        elif data.shape[1] > 1:
             plt.scatter(data.iloc[:, 0], data.iloc[:, 1], c=y_pred)
             plt.xlabel(data.columns[0])
             plt.ylabel(data.columns[1])
             plt.title('Clusters')
-        if path:
+        else:
+            print('Only one dimension found!!!')
+            dim = False
+        if path and dim:
             plt.savefig(path + '.png')
-        if show:
+        if show and dim:
             plt.show()
 
     def evaluate_clusters(self, data, y_pred, show=False, path=None):
         y_pred = np.array(y_pred)
+        clusters = np.unique(y_pred) 
         if len(np.unique(y_pred)) == 1:
             c_h_score = 'Only one cluster found'
             d_b_score = 'Only one cluster found'
@@ -106,17 +111,17 @@ class KmeansClustering:
         if path:
             with open(path + '/evaluation.txt', 'a+') as f:
                 f.write('------------ {} DISTANCE ------------ \n'.format(self.metric))
-                for i in range(0, self.n_clusters):
-                    n = len(y_pred[y_pred == i])
-                    f.write('N instances belonging to cluster {}: {} \n'.format(i, n)) 
+                for _, v in enumerate(clusters):
+                    n = len(y_pred[y_pred == v])
+                    f.write('N instances belonging to cluster {}: {} \n'.format(v, n)) 
                 f.write('Calinski score: {} \n'.format(c_h_score))
                 f.write('Davies-Bouldin score: {} \n'.format(d_b_score))
                 f.write('Silhouette score: {} \n \n'.format(s_score))
         if show:
             print('------------ {} DISTANCE ------------'.format(self.metric))
-            for i in range(0, self.n_clusters):
-                n = len(y_pred[y_pred == i])
-                print('N instances belonging to cluster {}:'.format(i), n) 
+            for _, v in enumerate(clusters):
+                n = len(y_pred[y_pred == v])
+                print('N instances belonging to cluster {}:'.format(v), n) 
             print('Calinski score:', c_h_score)
             print('Davies-Bouldin score:', d_b_score)
             print('Silhouette score:', s_score, '\n')

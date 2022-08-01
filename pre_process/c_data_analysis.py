@@ -1,28 +1,40 @@
 # packages
 import matplotlib.pyplot as plt
 import seaborn as sns
+import pandas as pd
 # local
 from b_construct_dataset import read_csv_file
 
 
-dataset = '../datasets/constructed/trips_until_2022-05-13'
-trips = read_csv_file(dataset)
+df = read_csv_file('../datasets/missing_values/trips_mv_all')
+
+# remove variables that dont relate to the objective of this thesis
+#  'trip_start', 'trip_end', 
+df = df[(df.columns.difference([
+    'light_mode', 'zero_speed_time', 'n_zero_speed', 'n_ignition_on', 'n_ignition_off',
+    'n_high_beam', 'n_low_beam', 'n_wipers', 'n_signal_right', 'n_signal_left'
+], sort=False))]
+
+print('Dataset shape:', df.shape)
 
 print("------------------- Dataset ------------------- \n")
-print(trips, "\n")
+print(df, "\n")
 
 print("------------------- Describe ------------------- \n")
-print(trips.describe(), "\n")
+print(df.describe(), "\n")
+
+print(df[df['duration'] <= 0])
+print(df[df['distance'] <= 0])
 
 print("------------------- Info ------------------- \n")
-print(trips.info(), "\n")
+# print(df.info(), "\n")
 
 print("------------------- Missing Values ------------------- \n")
-print(trips.isnull().sum().to_string(), "\n")
+# print(df.isnull().sum().to_string(), "\n")
 
 print("---------------- Column Names with Missing Values ---------------- \n")
-columns_nan = trips.columns[trips.isnull().any()].tolist()
-print(columns_nan, len(columns_nan), "\n")
+# columns_nan = df.columns[df.isnull().any()].tolist()
+# print(columns_nan, len(columns_nan), "\n")
 
 # plot to see data distribution
 """
@@ -38,7 +50,3 @@ print(columns_nan, len(columns_nan), "\n")
 #         plt.show()
 #         sns.distplot(trips[c])
 #         plt.show()
-
-# analyse light_mode feature (categorical)
-sns.histplot(trips['light_mode'])
-plt.show()

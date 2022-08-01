@@ -1096,7 +1096,7 @@ if __name__ == "__main__":
     # info = read_json_file(folder + 'info.json')
 
     pull_trips_and_store_df(
-        '../datasets/constructed', 'trips_test_2022-05-14_2022-07-20', '2022-05-14', None
+        '../datasets/constructed', 'trips_test_2018-05-14_2022-07-20', '2022-05-04', '2022-05-03'
     )
 
     # df1_name = '../datasets/constructed/trips_2021-04-1_2021-07-1'

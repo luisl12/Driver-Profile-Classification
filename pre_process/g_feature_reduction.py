@@ -37,39 +37,40 @@ def pca(X_train, X_test, variance_th, debug=False):
         x_test = pca.transform(X_test)
 
     n_comp = pca.n_components_
+    eigen_vect = pca.components_
     eigen_val = pca.explained_variance_
 
-    # debug
+    print('Original feature size:', X_train.shape[1])
+    print('After PCA feature size:', x_train.shape[1])
+    
     if debug:
-        # eigen_vect = pca.components_
-        # print('Components:', eigen_vect)
-        print('N components:', n_comp)
-        print('Variance for each PC:', eigen_val)
-        print('Variance ratio for each PC:', pca.explained_variance_ratio_)
-        print('Original feature size:', X_train.shape[1])
-        print('After PCA feature size:', x_train.shape[1])
-        # n principal components
         pc = range(1, n_comp+1)
         plt.bar(pc, pca.explained_variance_ratio_)
         plt.xlabel('Principal Components')
         plt.ylabel('Variance %')
         plt.title('Best Principal Components')
         plt.xticks(pc)
-        plt.show()
+        print('Components:', eigen_vect)
+        print('N components:', n_comp)
+        print('Variance for each PC:', eigen_val)
+        print('Variance ratio for each PC:', pca.explained_variance_ratio_)
+
         if x_train.shape[1] > 2:
             # PC1 vs PC2 vs PC3
             fig = plt.figure(figsize=(10, 10))
             axis = fig.add_subplot(111, projection='3d')
             axis.scatter(x_train[:, 0], x_train[:, 1], x_train[:, 2])
             axis.set_title('PCA Data')
-            axis.set_xlabel('PC1', fontsize=10)
-            axis.set_ylabel('PC2', fontsize=10)
-            axis.set_zlabel('PC3', fontsize=10)
-        else:
-            plt.scatter(x_train[:, 0], x_train[:, 1])
+            axis.set_xlabel("PC1", fontsize=10)
+            axis.set_ylabel("PC2", fontsize=10)
+            axis.set_zlabel("PC3", fontsize=10)
+        elif x_train.shape[1] > 1:
+            plt.scatter(tsne[:, 0], tsne[:, 1])
             plt.xlabel('PC1')
             plt.ylabel('PC2')
             plt.title('PCA Data')
+        else:
+            print('Only one dimension found!!!')
         plt.show()
 
     return pd.DataFrame(x_train), pd.DataFrame(x_test)
@@ -93,30 +94,30 @@ def svd(X_train, X_test, n_components, variance_th, debug=False):
         x_test = svd.transform(X_test)
 
     n_comp = svd.components_.shape[0]
+    eigen_vect = svd.components_
+    eigen_val = svd.explained_variance_
 
     best_n_comp = select_n_components(
         svd.explained_variance_ratio_, variance_th
     )
 
-    # debug
+    print('Original feature size:', X_train.shape[1])
+    print('After SVD feature size:', x_train.shape[1])
+
     if debug:
-        print('N components:', n_comp)
-        print('Best N components:', best_n_comp)
-        print('Variance for each PC:', svd.explained_variance_)
-        print('Variance ratio for each PC:', svd.explained_variance_ratio_)
-        print('Total percentage of Variance:', sum(
-            svd.explained_variance_ratio_
-        ))
-        print('Original feature size:', X_train.shape[1])
-        print('After SVD feature size:', x_train.shape[1])
-        # n principal components
         pc = range(1, n_comp+1)
         plt.bar(pc, svd.explained_variance_ratio_)
         plt.xlabel('Principal Components')
         plt.ylabel('Variance %')
         plt.title('Best Principal Components')
         plt.xticks(pc)
-        plt.show()
+        print('Components:', eigen_vect)
+        print('N components:', n_comp)
+        print('Best N components:', best_n_comp)
+        print('Variance for each PC:', eigen_val)
+        print('Variance ratio for each PC:', svd.explained_variance_ratio_)
+        print('Total percentage of Variance:', sum(eigen_val))
+
         if x_train.shape[1] > 2:
             # PC1 vs PC2 vs PC3
             fig = plt.figure(figsize=(10, 10))
@@ -126,11 +127,13 @@ def svd(X_train, X_test, n_components, variance_th, debug=False):
             axis.set_xlabel("PC1", fontsize=10)
             axis.set_ylabel("PC2", fontsize=10)
             axis.set_zlabel("PC3", fontsize=10)
-        else:
-            plt.scatter(x_train[:, 0], x_train[:, 1])
+        elif x_train.shape[1] > 1:
+            plt.scatter(tsne[:, 0], tsne[:, 1])
             plt.xlabel('PC1')
             plt.ylabel('PC2')
             plt.title('SVD Data')
+        else:
+            print('Only one dimension found!!!')
         plt.show()
 
     return pd.DataFrame(x_train), pd.DataFrame(x_test), best_n_comp

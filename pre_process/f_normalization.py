@@ -237,14 +237,15 @@ def normalize_by_distance(df):
         pandas.DataFrame: Dataset normalized
     """
     trips = df.div(df['distance'], axis=0)
-    trips = trips.drop('distance', 1)
+    trips = trips.drop(labels='distance', axis=1)
+    trips = trips.drop(labels='duration', axis=1)
     return trips
 
 
 def normalize_by_duration(df):
     """
     Normalize dataset by trip duration.
-    Each instance gets divided by trip duration.
+    Each instance (except speed) gets divided by trip duration.
 
     Args:
         df (pandas.DataFrame): Dataset
@@ -252,22 +253,30 @@ def normalize_by_duration(df):
     Returns:
         pandas.DataFrame: Dataset normalized
     """
+    # convert speed from km/h to km/s
+    # 1 km/h = 0.0002777778 km/s
+    speed = df['speed'] * 0.0002777778  # km/s
     trips = df.div(df['duration'], axis=0)
-    trips = trips.drop('duration', 1)
+    trips = trips.drop(labels='duration', axis=1)
+    trips = trips.drop(labels='distance', axis=1)
+    # trips['speed'] = speed
     return trips
 
 
 if __name__ == "__main__":
 
-    # # read dataset
-    # trips = read_csv_file(
-    #     '../datasets/categorical_data/trips_label_encoding'
-    # )
+    df = read_csv_file('../datasets/missing_values/trips_mv_all')
 
-    # # remove start, and end
-    # trips = trips[(trips.columns.difference([
-    #     'trip_start', 'trip_end'
-    # ], sort=False))]
+    print(df.loc[[557]])
+    print(df.loc[[557]]['speed'])
+
+    # remove variables that dont relate to the objective of this thesis
+    df = df[(df.columns.difference([
+        'trip_start', 'trip_end', 'light_mode', 'zero_speed_time', 'n_zero_speed', 'n_ignition_on', 
+        'n_ignition_off', 'n_high_beam', 'n_low_beam', 'n_wipers', 'n_signal_right', 'n_signal_left'
+    ], sort=False))]
+
+    print(df)
 
     # # standard scaler
     # print('-------------- Standard Scaler --------------')
@@ -312,46 +321,33 @@ if __name__ == "__main__":
     # store_csv('../datasets/normalization', 'trips_n_s', n_s)
 
     # # normalize by distance
-    # print('-------------- Normalize by Distance --------------')
-    # norm_distance = normalize_by_distance(trips)
+    print('-------------- Normalize by Distance --------------')
+    norm_distance = normalize_by_distance(df)
+    print(norm_distance)
+    print((norm_distance < 0.5).sum())
     # store_csv(
     #     '../datasets/normalization', 'trips_norm_distance', norm_distance
     # )
 
     # # normalize by duration
-    # print('-------------- Normalize by Duration --------------')
-    # norm_duration = normalize_by_duration(trips)
+    print('-------------- Normalize by Duration --------------')
+    norm_duration = normalize_by_duration(df)
+    print(norm_duration)
+    # print((norm_duration > 1).sum())
     # store_csv(
     #     '../datasets/normalization', 'trips_norm_duration', norm_distance
     # )
 
-    trips = read_csv_file(
-        '../datasets/normalization/trips_mm_s'
-    )
-    print(trips.shape)
+    # trips = read_csv_file(
+    #     '../datasets/normalization/trips_mm_s'
+    # )
+    # print(trips.shape)
 
     # ------------- TEST KMEANS ------------- #
-    from sklearn.cluster import KMeans
-    train_set = trips[:7293]
-    test_set = trips[7293:]
-    print('Train size:', train_set.shape)
-    print('Test size:', test_set.shape)
+    # from sklearn.cluster import KMeans
+    # kmeans = KMeans(n_clusters=3, random_state=0).fit(df)
+    # print('Labels:', kmeans.labels_, len(kmeans.labels_))
+    # print('Clusters:', kmeans.cluster_centers_)
+    # sns.scatterplot(x="speed", y="Income", hue = 'Clusters',  data=df)
 
-    kmeans = KMeans(n_clusters=3, random_state=0).fit(train_set)
-    print('Labels:', kmeans.labels_, len(kmeans.labels_))
-    predicted = kmeans.predict(test_set)
-    print('Prediction:', predicted, len(predicted))
-    print('Clusters:', kmeans.cluster_centers_)
 
-    # pd.options.display.float_format = '{:,.3f}'.format
-    # plt.figure(figsize=(20, 20))
-    # # annot_kws={'size': 5}
-    # # annot=True
-    # correlation = trips.corr()
-    # sns.heatmap(
-    #     correlation, linewidths=.3, vmax=1, vmin=-1, center=0, cmap='vlag'
-    # )
-    # correlation = correlation.unstack()
-    # correlation = correlation[abs(correlation) >= 0.7]
-    # plt.show()
-    # print(correlation.to_string())

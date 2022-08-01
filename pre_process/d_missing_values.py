@@ -642,8 +642,12 @@ def delete_missing_values(df):
     df_mid = df.iloc[:, 4:].dropna(how='all')
     df = df.iloc[:, :4].join(df_mid)
     # remove distance and duration = 0
-    df = df[df.distance != 0]
-    df = df[df.duration != 0]
+    df = df[df.distance > 0]
+    df = df[df.duration > 0]
+    # remove trips where duration is less than 1 minute
+    df = df[df.duration >= 60]
+    # remove trips where distance is less than 1.5 kms
+    df = df[df.distance >= 1]
     return df
 
 
@@ -692,7 +696,11 @@ def fill_missing_values(trips, columns_nan):
 if __name__ == "__main__":
 
     # read dataset
-    trips = read_csv_file('../datasets/constructed/trips_test_2022-05-14_2022-07-20')
+    # trips = read_csv_file('../datasets/constructed/trips_test_2022-05-14_2022-07-20')
+    df1 = read_csv_file('../datasets/missing_values/trips_mv')
+    df2 = read_csv_file('../datasets/missing_values/trips_mv_test')
+    trips = pd.concat([df1, df2], ignore_index=True)
+    print(trips.shape)
 
     # remove columns/rows that have all values NaN
     trips = delete_missing_values(trips)
@@ -720,6 +728,8 @@ if __name__ == "__main__":
     # check columns with null values after inputing null values
     columns_nan = check_columns_with_nulls(trips)
 
+    print(trips)
+
     if len(columns_nan) == 0:
         # store dataset
-        store_csv('../datasets/missing_values', 'trips_mv_test', trips)
+        store_csv('../datasets/missing_values', 'trips_mv_all', trips)

@@ -1,6 +1,0 @@
-# average
-N instances belonging to cluster 0: 1847
-N instances belonging to cluster 1: 12739
-Calinski score: 14728.40193268183
-Davies-Bouldin score: 0.5432489727386369
-Silhouette score: 0.6658425133709946

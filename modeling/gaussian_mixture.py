@@ -30,6 +30,7 @@ class GaussianMixtureClustering:
         return self.gm.fit_predict(data)
 
     def visualize_clusters(self, data, y_pred, path=None, show=False):
+        dim = True
         # show clusters
         if data.shape[1] > 2:
             fig = plt.figure(figsize=(10, 10))
@@ -41,14 +42,17 @@ class GaussianMixtureClustering:
             axis.set_ylabel(data.columns[1], fontsize=10)
             axis.set_zlabel(data.columns[2], fontsize=10)
             plt.legend(*sc.legend_elements(), loc=1, title='Clusters')
-        else:
+        elif data.shape[1] > 1:
             plt.scatter(data.iloc[:, 0], data.iloc[:, 1], c=y_pred)
             plt.xlabel(data.columns[0])
             plt.ylabel(data.columns[1])
             plt.title('Clusters')
-        if path is not None:
+        else:
+            print('Only one dimension found!!!')
+            dim = False
+        if path and dim:
             plt.savefig(path + '.png')
-        if show:
+        if show and dim:
             plt.show()
 
     def evaluate_clusters(self, data, y_pred, path=None, show=False):

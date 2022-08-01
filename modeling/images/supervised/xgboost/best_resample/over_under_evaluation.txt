@@ -1,7 +1,7 @@
-fit_time mean: 3.3215960025787354 with a standard deviation: 0.7941540692804119 
-score_time mean: 0.036300373077392575 with a standard deviation: 0.005656755913815759 
-test_accuracy mean: 0.9671602792014294 with a standard deviation: 0.0036016375939735487 
-test_precision mean: 0.8561214328208436 with a standard deviation: 0.017990009388762527 
-test_recall mean: 0.941711229946524 with a standard deviation: 0.014036796522360093 
-test_f1 mean: 0.8967014641490281 with a standard deviation: 0.01060802942519041 
-test_AUC mean: 0.9947553358807776 with a standard deviation: 0.0011392413591834838 
+fit_time mean: 6.256961464881897 with a standard deviation: 1.1288196595184712 
+score_time mean: 0.061890459060668944 with a standard deviation: 0.04124131859813734 
+test_accuracy mean: 0.9907504857063557 with a standard deviation: 0.0022507379049163754 
+test_precision mean: 0.9716529873491613 with a standard deviation: 0.006962087152798475 
+test_recall mean: 0.9837990849544124 with a standard deviation: 0.008297149630190539 
+test_f1 mean: 0.9776587137435708 with a standard deviation: 0.005439210100772841 
+test_AUC mean: 0.9996362840806482 with a standard deviation: 0.00012624536857297459 

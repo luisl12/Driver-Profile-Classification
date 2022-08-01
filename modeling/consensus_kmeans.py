@@ -47,9 +47,9 @@ class ConsensusKmeans:
         ensemble = []
         
         for params in grid:
-            algs = ['kmeans', 'gaussian']
+            # algs = ['kmeans', 'gaussian']
             metric = np.random.choice(metrics, 1, p=[0.4, 0.5, 0.025, 0.025, 0.025, 0.025])
-            # alg = np.random.choice(algs, 1, p=[0.5, 0.5])
+            # alg = np.random.choice(algs, 1, p=[0.7, 0.3])
             # if alg == 'kmeans':
             #    k_means = KmeansClustering(data=data, init='random', metric='EUCLIDEAN_SQUARE', **params)
             # else:
@@ -130,7 +130,7 @@ class ConsensusKmeans:
             s_score = silhouette_score(data, y_pred)
         
         if path:
-            with open(path + '/evaluation.txt', 'a+') as f:
+            with open(path + 'evaluation.txt', 'a+') as f:
                 for _, v in enumerate(clusters):
                     n = len(y_pred[y_pred == v])
                     f.write('N instances belonging to cluster {}: {} \n'.format(v, n)) 
