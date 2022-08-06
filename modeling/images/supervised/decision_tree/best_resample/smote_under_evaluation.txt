@@ -5,3 +5,5 @@ test_precision mean: 0.9320682428838436 with a standard deviation: 0.01369763760
 test_recall mean: 0.9680030282084198 with a standard deviation: 0.009991674473554769 
 test_f1 mean: 0.9495745069754721 with a standard deviation: 0.005665862964007227 
 test_AUC mean: 0.9748216869666919 with a standard deviation: 0.0039910050912851215 
+
+BEST

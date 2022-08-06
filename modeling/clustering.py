@@ -11,6 +11,10 @@ import sys
 sys.path.append("..")
 
 # packages
+import time
+from yellowbrick.cluster import silhouette_visualizer
+from yellowbrick.cluster.elbow import kelbow_visualizer
+from yellowbrick.cluster import KElbowVisualizer
 from sklearn.decomposition import PCA, TruncatedSVD
 from sklearn.cluster import KMeans
 from sklearn.mixture import GaussianMixture
@@ -42,7 +46,7 @@ from pre_process import (
 )
 
 
-def elbow_method(data, max_clusters, path=None):
+def elbow_method(data, path=None, show=False):
     """
     Calculate elbow score for different number of clusters
 
@@ -51,20 +55,15 @@ def elbow_method(data, max_clusters, path=None):
 
     Args:
         data (pandas.DataFrame): Dataset
-        max_clusters (int): Number of max clusters
+        path (str): Path to save
+        show (bool): Show or not 
     """
-    n_c = range(1, max_clusters+1)
-    kmeans = [KMeans(n_clusters=i) for i in n_c]
-    score = [kmeans[i].fit(data).inertia_ for i in range(len(kmeans))]
-    plt.plot(n_c, score, '-o')
-    plt.title('Elbow Score Plot')
-    plt.xlabel('Number of Clusters')
-    plt.ylabel('Sum of Squared Distances')
-    plt.title('Elbow Curve')
-    plt.xticks(n_c)
-    if path:
-        plt.savefig(path + '.png')
-    plt.show()
+    metrics = ['distortion', 'silhouette', 'calinski_harabasz']
+    for m in metrics:
+        plt.figure()
+        kelbow_visualizer(KMeans(random_state=42), data, k=(2, 10), metric=m, show=show)
+        if path and not show:
+            plt.savefig(path + '_' + m + '.png')
 
 def silhouette_method(data, max_clusters, path=None):
     """
@@ -141,18 +140,19 @@ def gaussian_best_comp(data, path=None):
 
 
 def clusters_info(data, y_pred, path=None, show=False):
-    clusters = pd.Series(y_pred, name='clusters')
-    df = pd.merge(data, clusters, left_index=True, right_index=True)
+    # clusters = pd.Series(y_pred, name='clusters')
+    df = data.assign(target=y_pred)
+    print(df)
     if path:
-        store_csv(path, 'min', df.groupby(['clusters']).min().T)
-        store_csv(path, 'max', df.groupby(['clusters']).max().T)
-        store_csv(path, 'mean', df.groupby(['clusters']).mean().T)
-        store_csv(path, 'std', df.groupby(['clusters']).std().T)
+        store_csv(path, 'min', df.groupby(['target']).min().T)
+        store_csv(path, 'max', df.groupby(['target']).max().T)
+        store_csv(path, 'mean', df.groupby(['target']).mean().T)
+        store_csv(path, 'std', df.groupby(['target']).std().T)
     if show: 
-        print(df.groupby(['clusters']).min().T)
-        print(df.groupby(['clusters']).max().T)
-        print(df.groupby(['clusters']).mean().T)
-        print(df.groupby(['clusters']).std().T)
+        print(df.groupby(['target']).min().T)
+        print(df.groupby(['target']).max().T)
+        print(df.groupby(['target']).mean().T)
+        print(df.groupby(['target']).std().T)
 
 def visualize_clusters_with_pca(data, target):
     model = PCA(n_components=2).fit(data)
@@ -230,7 +230,7 @@ def analyse_via_random_forest(data, target, n_top_features=3):
     plot_tree(
         rfc.estimators_[0],
         feature_names=list(data.columns),
-        class_names=['0', '1'],
+        class_names=['0', '1', '2'],
         filled=True,
         fontsize=8,
         max_depth=4
@@ -241,14 +241,17 @@ def analyse_via_random_forest(data, target, n_top_features=3):
 
 if __name__ == "__main__":
 
-    df = read_csv_file('../datasets/missing_values/trips_mv_all')
+    df = read_csv_file('../datasets/supervised/trips_kmeans')
 
     # remove variables that dont relate to the objective of this thesis
     df = df[(df.columns.difference([
         'trip_start', 'trip_end', 'light_mode', 'zero_speed_time', 'n_zero_speed', 'n_ignition_on',
         'n_ignition_off', 'n_high_beam', 'n_low_beam', 'n_wipers', 'n_signal_right', 'n_signal_left'
     ], sort=False))]
+    print('Dataset shape:', df.shape)
 
+    df = df[df['target'] == 1]
+    df = df[(df.columns.difference(['target'], sort=False))]
     print('Dataset shape:', df.shape)
 
     print('\n ---------------------- Normalization ---------------------- \n')
@@ -274,9 +277,9 @@ if __name__ == "__main__":
     X_train_pca, _ = pca(norm_distance, None, 0.99, debug=False)
     
     # # apply SVD to initial df
-    n_components = norm_distance.shape[1] - 1
-    _, _, best_n_comp = svd(norm_distance, None, n_components, 0.99, debug=False)
-    X_train_svd, _, _ = svd(norm_distance, None, best_n_comp, 0.99, debug=False)
+    # n_components = norm_distance.shape[1] - 1
+    # _, _, best_n_comp = svd(norm_distance, None, n_components, 0.99, debug=False)
+    # X_train_svd, _, _ = svd(norm_distance, None, best_n_comp, 0.99, debug=False)
 
     reductions = {
         # 'no_red': norm_distance,
@@ -287,12 +290,10 @@ if __name__ == "__main__":
     print('\n ----------------- Best N clusters/components ----------------- \n')
 
     # for r in reductions:
-    #     path = 'images/unsupervised/best_n_clusters/final/'
-    #     norm = 'norm_duration_'
+    #     path = 'images/unsupervised/best_n_clusters/non_agressive/'
+    #     norm = 'norm_distance'
     #     elbow_name = norm + 'elbow_{}'.format(r)
-    #     silhouette_name = norm + 'silhouette_{}'.format(r)
-    #     elbow_method(reductions[r], 10, path=path+elbow_name)
-    #     silhouette_method(reductions[r], 10, path=path+silhouette_name)
+    #     elbow_method(reductions[r], path=path+elbow_name, show=False)
     
     # for r in reductions:
     #     min_pts = 2 * no_norm.shape[1]
@@ -312,13 +313,13 @@ if __name__ == "__main__":
     
     metrics = ['EUCLIDEAN', 'EUCLIDEAN_SQUARE', 'MANHATTAN', 
         'CHEBYSHEV', 'CANBERRA', 'CHI_SQUARE']
-    metrics = ['EUCLIDEAN_SQUARE']
+    metrics = ['EUCLIDEAN']
     k = 2
     for r in reductions:
         for m in metrics:
             k_means = KmeansClustering(n_clusters=k, init='kmeans++', metric=m, data=reductions[r])
             y_pred = k_means.fit_predict(reductions[r])
-            path = './images/unsupervised/kmeans/no_norm/{}/'.format(r)
+            path = './images/unsupervised/kmeans/distance_norm/agressive_with_pca/'
             k_means.visualize_clusters(reductions[r], y_pred, path=None, show=True)
             k_means.evaluate_clusters(reductions[r], y_pred, path=None, show=True)
 
@@ -359,25 +360,51 @@ if __name__ == "__main__":
     print('\n --------------------- Cluster Analysis --------------------- \n')
 
     # best_features, X_pc = analyse_via_pca_components(norm_distance, n_components=2)
-    analyse_via_decision_tree(norm_distance, y_pred, n_top_features=3)
+    # analyse_via_decision_tree(norm_distance, y_pred, n_top_features=3)
     # analyse_via_random_forest(norm_distance, y_pred, n_top_features=3)
-    path = './info/'
+    # path = './info/'
     # clusters_info(data=norm_distance, y_pred=y_pred, path=None, show=True)
 
     # plt.figure(figsize=(16,7))
     # sns.scatterplot(
-    #     x='n_tsr_level',
-    #     y='n_brakes',
+    #     x='speed',
+    #     y='n_tsr_level',
     #     hue=y_pred, 
-    #     palette=sns.color_palette("hls", 2), 
+    #     palette=sns.color_palette("hls", k), 
     #     data=norm_distance, 
     #     legend="full"
     # )
     # plt.show()
 
-    print('\n --------------------- Save Cluster Dataset --------------------- \n')
+    # plt.figure(figsize=(16,7))
+    # sns.scatterplot(
+    #     x='n_tsr_level',
+    #     y='n_tsr_level_2',
+    #     hue=y_pred, 
+    #     palette=sns.color_palette("hls", k), 
+    #     data=norm_distance, 
+    #     legend="full"
+    # )
+    # plt.show()
+
+    # plt.figure(figsize=(16,7))
+    # sns.scatterplot(
+    #     x=X_train_pca[0],
+    #     y=X_train_pca[1],
+    #     hue=y_pred, 
+    #     palette=sns.color_palette("hls", k), 
+    #     data=X_train_pca, 
+    #     legend="full"
+    # )
+    # plt.show()
+
+    print('\n --------------------- Save Cluster Dataset and Model --------------------- \n')
 
     # read df again and add new target column and save
-    # df = read_csv_file('../datasets/missing_values/trips_mv_all')
-    # df = df.assign(target=y_pred)
-    # store_csv('../datasets/supervised', 'trips_kmeans', df)
+    # df = read_csv_file('../datasets/supervised/trips_kmeans')
+    # print(df[df['target'] == 1])
+    # print(df[df['target'] == 1].index)
+    # print(np.array(y_pred) + 1, len(y_pred))
+    # df.loc[df[df['target'] == 1].index, 'target'] = np.array(y_pred) + 1
+    # df = norm_distance.assign(target=y_pred)
+    # store_csv('../datasets/supervised', 'trips_kmeans_agressive', df)

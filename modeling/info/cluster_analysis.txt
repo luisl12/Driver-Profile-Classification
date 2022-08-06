@@ -1,7 +1,7 @@
 
 Kmeans:
 
-	Análise PCA | decision tree | random forest:
+	Análise PCA:
 		- Most important feature for component 0: ['speed', 'n_tsr_level', 'n_brakes', 'n_hc', 'n_ha']
 
 		As figuras clusters_speed_ntsrlevel e clusters_speed_nbrakes permitem descrever os clusters da seguinte forma:
@@ -45,6 +45,6 @@ Conclusão:
 	(por ex) para considerar a viagem como agressiva ou não agressiva. Deste modo, esta seleção tem que ser feita de acordo com as caracteristicas do
 	conjunto de dados em questão. Então, de acordo com este conjunto de dados, as viagens do cluster 1 são consideradas agressivas quando comparadas
 	com as viagens do cluster 0.
-	- Cluster 0 -> Trip profile = Agressive
-	- Cluster 1 -> Trip profile = Non–aggressive
+	- Cluster 1 -> Trip profile = Agressive
+	- Cluster 0 -> Trip profile = Non–aggressive
 	

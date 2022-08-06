@@ -10,22 +10,16 @@ import sys
 sys.path.append("..")
 
 # packages
+from itertools import cycle
+import joblib
 from collections import Counter
-import pickle
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from imblearn.over_sampling import RandomOverSampler, SMOTE, ADASYN, BorderlineSMOTE
 from imblearn.under_sampling import RandomUnderSampler
-from skl2onnx import convert_sklearn, update_registered_converter, to_onnx
-from skl2onnx.common.data_types import FloatTensorType, guess_numpy_type
-from onnxmltools.convert.xgboost.operator_converters.XGBoost import (
-    convert_xgboost)
-from skl2onnx.common.shape_calculator import calculate_linear_classifier_output_shapes
-from skl2onnx.algebra.onnx_operator import OnnxSubEstimator
-from skl2onnx.algebra.onnx_ops import OnnxMatMul, OnnxSub
-import onnxruntime as rt
 from sklearn.model_selection import cross_validate, GridSearchCV, StratifiedKFold, train_test_split
+from sklearn.decomposition import PCA
 from sklearn.metrics import (
     make_scorer, 
     confusion_matrix, 
@@ -36,31 +30,28 @@ from sklearn.metrics import (
     classification_report,
     roc_curve,
     auc,
-    det_curve,
     precision_recall_curve,
     ConfusionMatrixDisplay,
     RocCurveDisplay,
     PrecisionRecallDisplay
 )
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import FunctionTransformer
+from sklearn.preprocessing import label_binarize, FunctionTransformer
 from imblearn.pipeline import Pipeline as IMBPipeline
-from sklearn2pmml import sklearn2pmml, make_pmml_pipeline
-from sklearn2pmml.pipeline import PMMLPipeline
 from sklearn.tree import DecisionTreeClassifier, plot_tree, export_text
 from sklearn.ensemble import RandomForestClassifier
 import xgboost as xgb
+from sklearn.svm import SVC
 # local
-from pre_process import (
-    read_csv_file,
-    normalize_by_distance
-)
+from pre_process import read_csv_file
 
 
 
-def find_best_estimator(data, target, algorithm, grid, cv=10, path=None):
+def find_best_estimator(data, target, algorithm, grid, cv=10, is_multi_class=False, path=None):
     scores = ['accuracy', 'precision', 'recall', 'f1']
     refit_score = 'f1'
+    if is_multi_class:
+        scores = ['accuracy', 'precision_weighted', 'recall_weighted', 'f1_weighted']
+        refit_score = 'f1_weighted'
 
     kfold = StratifiedKFold(n_splits=cv, shuffle=True)
     clf = GridSearchCV(algorithm, param_grid=grid, cv=kfold, scoring=scores, refit=refit_score, n_jobs=-1, return_train_score=True)
@@ -72,19 +63,20 @@ def find_best_estimator(data, target, algorithm, grid, cv=10, path=None):
 
     print('Train set - Accuracy:', clf.cv_results_['mean_train_accuracy'][:cv])
     print('Test set - Accuracy:', clf.cv_results_['mean_test_accuracy'][:cv], '\n')
-    print('Train set - Precision:', clf.cv_results_['mean_train_precision'][:cv])
-    print('Test set - Precision:', clf.cv_results_['mean_test_precision'][:cv], '\n')
-    print('Train set - Recall:', clf.cv_results_['mean_train_recall'][:cv])
-    print('Test set - Recall:', clf.cv_results_['mean_test_recall'][:cv], '\n')
-    print('Train set - F1:', clf.cv_results_['mean_train_f1'][:cv])
-    print('Test set - F1:', clf.cv_results_['mean_test_f1'][:cv], '\n')
+    print('Train set - Precision:', clf.cv_results_['mean_train_' + scores[1]][:cv])
+    print('Test set - Precision:', clf.cv_results_['mean_test_' + scores[1]][:cv], '\n')
+    print('Train set - Recall:', clf.cv_results_['mean_train_' + scores[2]][:cv])
+    print('Test set - Recall:', clf.cv_results_['mean_test_' + scores[2]][:cv], '\n')
+    print('Train set - F1:', clf.cv_results_['mean_train_' + scores[3]][:cv])
+    print('Test set - F1:', clf.cv_results_['mean_test_' + scores[3]][:cv], '\n')
     print('Best score {}:'.format(refit_score), best_score, 'with best params:', best_params)
     print('Best estimator:', best_estimator)
 
     if path:
         # save model
-        with open(path + '.pickle', 'wb') as f:
-            pickle.dump(best_estimator, f)
+        joblib.dump(best_estimator, path + '.joblib')
+
+    return best_estimator
 
 
 def tree_structure(model):
@@ -170,18 +162,18 @@ def nested_cross_validation(data, target, algorithm, inner_n_splits, outter_n_sp
         'AUC': 'roc_auc'
     }
 
-    scores = cross_validate(clf, X=data, y=target, cv=outer_cv, scoring=scoring, n_jobs=-1)
-    return scores, confusion_matrixs, classification_reports, curves
+    scores = cross_validate(clf, X=data, y=target, cv=outer_cv, scoring=scoring, return_train_score=True, n_jobs=-1)
+    return scores
 
 
-def cross_validation(data, target, algorithm, cv=10, path=None):
+def cross_validation(data, target, algorithm, cv=10, is_multi_class=False, path=None):
     kfold = StratifiedKFold(n_splits=cv, shuffle=True, random_state=1)
     scoring = {
         'accuracy': 'accuracy',
-        'precision': 'precision',
-        'recall': 'recall',
-        'f1': 'f1',
-        'AUC': 'roc_auc'
+        'precision': 'precision' if not is_multi_class else 'precision_weighted',
+        'recall': 'recall' if not is_multi_class else 'recall_weighted',
+        'f1': 'f1' if not is_multi_class else 'f1_weighted',
+        'AUC': 'roc_auc' if not is_multi_class else 'roc_auc_ovr'
     }
     scores = cross_validate(algorithm, X=data, y=target, cv=kfold, scoring=scoring, n_jobs=-1)
     with open(path + 'evaluation.txt', 'w') as f:
@@ -189,18 +181,12 @@ def cross_validation(data, target, algorithm, cv=10, path=None):
             f.write("{} mean: {} with a standard deviation: {} \n".format(s, scores[s].mean(), scores[s].std()))
 
 
-def evaluate_cross_validation(scores, confusion_matrixs, classification_reports, curves, path=None, show=False):
+def evaluate_cross_validation(scores, path=None, show=False):
 
     if path:
         with open(path + 'evaluation.txt', 'w') as f:
             for s in scores:
                 f.write("{} mean: {} with a standard deviation: {} \n".format(s, scores[s].mean(), scores[s].std()))
-
-        # with open(path + 'classification_reports.txt', 'w') as f:
-        #     for cr in classification_reports:
-        #         print(cr)
-        #         f.write(str(cr))
-        #         f.write('\n')
     
     if show:
         print('Scores:', scores)
@@ -208,105 +194,157 @@ def evaluate_cross_validation(scores, confusion_matrixs, classification_reports,
             print("{} mean: {} with a standard deviation: {}".format(s, scores[s].mean(), scores[s].std()))
 
 
-# def save_model(model, name, path):
-#     if is_xgb:
-#         update_registered_converter(
-#             xgb.XGBClassifier, 'XGBoostXGBClassifier',
-#             calculate_linear_classifier_output_shapes, convert_xgboost,
-#             options={'nocl': [True, False], 'zipmap': [True, False, 'columns']})
-            
-#         initial_type = [('float_input', FloatTensorType([None, n_features]))]
-#         opset = {'': 12, 'ai.onnx.ml': 2}
-#         onx = convert_sklearn(model, initial_types=initial_type, target_opset=opset)
-        
-#     else:
-#         initial_type = [('float_input', FloatTensorType([None, n_features]))]
-#         # onx = convert_sklearn(model, initial_types=initial_type)
-#         onx = to_onnx(model, X=training_set.to_numpy())
+def predict_profile(path, x_test, is_multi_class=False, is_svm=False):
+    y_pred = y_pred_proba = None
 
-#     with open(name + '.onnx', 'wb') as f:
-#         f.write(onx.SerializeToString())
-
-
-def predict_profile(path, x_test):
-    # sess = rt.InferenceSession(model_name + '.onnx')
-    # input_name = sess.get_inputs()[0].name
-    # label_name = sess.get_outputs()[0].name
-    # # pred_onx = sess.run([label_name], {input_name: data.to_numpy()})[0]
-    # pred_onx = sess.run([label_name], {input_name: data.to_numpy().astype(np.float32)})[0]
-    y_pred = None
-    with open(path + '.pickle', 'rb') as f:
-        model = pickle.load(f)
+    with open(path + '.joblib', 'rb') as f:
+        model = joblib.load(f)
         y_pred = model.predict(x_test)
-    return y_pred
+        if is_svm:
+            y_pred_proba = model.decision_function(x_test)
+        else:
+            if is_multi_class:
+                y_pred_proba = model.predict_proba(x_test)
+            else:
+                y_pred_proba = model.predict_proba(x_test)[:, 1]
+
+    return y_pred, y_pred_proba
 
 
-def evaluate_predictions(y_true, y_pred, path=None, evaluation_name='evaluation', show=False):
+def evaluate_predictions(y_true, y_pred, y_pred_proba, is_multi_class=False, path=None, show=False):
 
     cm = confusion_matrix(y_true, y_pred)
-    tn, fp, fn, tp = cm.ravel()
+    if not is_multi_class:
+        tn, fp, fn, tp = cm.ravel()
     report = classification_report(y_true, y_pred)
     acc_score = accuracy_score(y_true, y_pred)
-    prec_score = precision_score(y_true, y_pred)
-    rec_score = recall_score(y_true, y_pred)
-    f1score = f1_score(y_true, y_pred)
+    prec_score = precision_score(y_true, y_pred, average='weighted' if is_multi_class else 'binary')
+    rec_score = recall_score(y_true, y_pred, average='weighted' if is_multi_class else 'binary')
+    f1score = f1_score(y_true, y_pred, average='weighted' if is_multi_class else 'binary')
 
     cmd = ConfusionMatrixDisplay(confusion_matrix=cm)
     cmd.plot(cmap=plt.cm.Blues)
-
-    fpr, tpr, _ = roc_curve(y_true, y_pred)
-    roc_auc = auc(fpr, tpr)
-    rcd = RocCurveDisplay(fpr=fpr, tpr=tpr, roc_auc=roc_auc)
-    rcd.plot()
-
-    prec, rec, _ = precision_recall_curve(y_test, y_pred)
-    prd = PrecisionRecallDisplay(precision=prec, recall=rec)
-    prd.plot()
-
     if path:
-        with open(path + evaluation_name + '.txt'.format(), 'w') as f:
+        plt.savefig(path + 'confusion_matrix')
+
+    if not is_multi_class:
+        RocCurveDisplay.from_predictions(y_true, y_pred_proba)
+        if path:
+            plt.savefig(path + 'roc_curve')
+        PrecisionRecallDisplay.from_predictions(y_true, y_pred_proba)
+        if path:
+            plt.savefig(path + 'precision_recall_curve')
+    else:
+        # Compute ROC curve and ROC area for each class
+        fpr = dict()
+        tpr = dict()
+        roc_auc = dict()
+        prec = dict()
+        rec = dict()
+        # binarize ovr
+        y_test = label_binarize(y_true, classes=np.unique(y_true))
+        for i in range(len(np.unique(y_true))):
+            fpr[i], tpr[i], _ = roc_curve(y_test[:, i], y_pred_proba[:, i])
+            roc_auc[i] = auc(fpr[i], tpr[i])
+            prec[i], rec[i], _ = precision_recall_curve(y_test[:, i], y_pred_proba[:, i])
+
+        plt.figure()
+        colors = cycle(["r", "g", "b"])
+        for i, color in zip(range(len(np.unique(y_true))), colors):
+            plt.plot(
+                fpr[i],
+                tpr[i],
+                color=color,
+                lw=2,
+                label="ROC curve of class {0} (area = {1:0.2f})".format(i, roc_auc[i]),
+            )
+        plt.xlim([-0.05, 1.05])
+        plt.ylim([-0.05, 1.05])
+        plt.xlabel("False Positive Rate")
+        plt.ylabel("True Positive Rate")
+        plt.legend(loc="lower right")
+        if path:
+            plt.savefig(path + 'roc_curve')
+
+        plt.figure()
+        for i, color in zip(range(len(np.unique(y_true))), colors):
+            plt.plot(
+                rec[i],
+                prec[i],
+                color=color,
+                lw=1.5,
+                label="Precision-Recall curve of class {}".format(i),
+            )
+        plt.xlim([-0.05, 1.05])
+        plt.ylim([-0.05, 1.05])
+        plt.xlabel("Recall")
+        plt.ylabel("Precision")
+        plt.legend(loc="lower right")
+        if path:
+            plt.savefig(path + 'precision_recall_curve')  
+        
+    if path:
+        with open(path + 'evaluation.txt'.format(), 'w') as f:
             f.write("Accuracy: {} \n".format(acc_score))
             f.write("Precision: {} \n".format(prec_score))
             f.write("Recall: {} \n".format(rec_score))
             f.write("F1: {} \n".format(f1score))
-            f.write("Number of TP: {} \n".format(tp))
-            f.write("Number of TN: {} \n".format(tn))
-            f.write("Number of FP: {} \n".format(fp))
-            f.write("Number of FN: {} \n \n".format(fn))
+            if not is_multi_class:
+                f.write("Number of TP: {} \n".format(tp))
+                f.write("Number of TN: {} \n".format(tn))
+                f.write("Number of FP: {} \n".format(fp))
+                f.write("Number of FN: {} \n \n".format(fn))
             f.write(report)
-            plt.savefig(path + 'confusion_matrix')
 
     if show:
         print(report)
-        print('Accuracy:', accuracy_score(y_true, y_pred))
-        print('Precision:', precision_score(y_true, y_pred))
-        print('Recall:', recall_score(y_true, y_pred))
-        print('F1:', f1_score(y_true, y_pred))
-        print('Number of TP:', tp)
-        print('Number of TN:', tn)
-        print('Number of FP:', fp)
-        print('Number of FN:', fn)
+        print('Accuracy:', acc_score)
+        print('Precision:', prec_score)
+        print('Recall:', rec_score)
+        print('F1:', f1score)
+        if not is_multi_class:
+            print('Number of TP:', tp)
+            print('Number of TN:', tn)
+            print('Number of FP:', fp)
+            print('Number of FN:', fn)
         plt.show()
 
 
 def show_dataset_info(df):
+    classes = np.unique(df['target'])
     print('Dataset shape:', df.shape)
-    print('Number of trips belonging to class 0:', len(df[df['target'] == 0]))
-    print('Number of trips belonging to class 1:', len(df[df['target'] == 1]))
+    for c in classes:
+        print('Number of trips belonging to class {}:'.format(c), len(df[df['target'] == c]))
 
+
+def normalize_by_distance(df):
+    """
+    Normalize dataset by trip distance.
+    Each instance gets divided by trip distance.
+
+    Args:
+        df (pandas.DataFrame): Dataset
+
+    Returns:
+        pandas.DataFrame: Dataset normalized
+    """
+    trips = df.div(df['distance'], axis=0)
+    trips = trips.drop(labels='distance', axis=1)
+    trips = trips.drop(labels='duration', axis=1)
+    return trips
 
 
 if __name__ == "__main__":
 
     # read first and second dataset and cocatenate both
-    df = read_csv_file('../datasets/supervised/trips_kmeans')
+    df = read_csv_file('../datasets/supervised/trips_kmeans_agressive')
 
     print('------------------ DATASET INFO ------------------ \n')
     show_dataset_info(df)
 
     data = df.drop('target', axis=1)
     target = df['target']
-    X_train, X_test, y_train, y_test = train_test_split(data, target, test_size=0.20, stratify=target, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(data, target, test_size=0.20, stratify=target, shuffle=True)
     print('Train balance after split:', Counter(y_train))
     print('Test balance after split:', Counter(y_test))
 
@@ -316,6 +354,7 @@ if __name__ == "__main__":
     dtc = DecisionTreeClassifier()
     xgbc = xgb.XGBClassifier(objective="binary:logistic")
     rfc = RandomForestClassifier()
+    svm = SVC(kernel="linear")
 
     # define param grid for each classifier
     dtc_grid = {
@@ -324,7 +363,7 @@ if __name__ == "__main__":
         'clf__min_samples_split': [0.05, 0.1, 0.15, 0.2],  # very important for overfitting
         'clf__min_samples_leaf': [0.05, 0.1, 0.15, 0.2],  # very important for overfitting
         # 'clf__max_features': [0.2, 0.6, 1.0],
-        'over__k_neighbors': [4, 5, 6, 8, 10]
+        'over__n_neighbors': [4, 5, 6, 8]
     }         
     rfc_grid = {
         'clf__n_estimators':[100, 150, 200, 250],  # just pick a high number
@@ -332,67 +371,66 @@ if __name__ == "__main__":
         # 'clf__max_depth': [8, 10, 12],  # not very important in random forest
         'clf__min_samples_split': [0.02, 0.05, 0.1, 0.15, 0.2],
         # 'clf__min_samples_leaf': [1, 2, 4],  # not very important in random forest
-        'over__k_neighbors': [4, 5, 6, 8]
+        'over__n_neighbors': [4, 5, 6, 8]
     }
     xgbc_grid = {
-        'clf__n_estimators':[100, 150, 200, 250],
-        'clf__max_depth':[3, 4, 6, 8, 10],
-        'clf__learning_rate': [0.01, 0.05, 0.1],
-        # 'clf__gamma': [0],
+        'clf__n_estimators':[150, 200, 250],
+        'clf__max_depth':[6, 8], # [6, 8, 10]
+        'clf__learning_rate': [0.01, 0.05, 0.1], 
         'clf__colsample_bytree': [0.3, 0.5, 0.7],
-        # 'clf__subsample': [0.2, 0.5, 0.8, 1.0],
-        # 'clf__min_child_weight': [0.2, 0.4, 0.6, 0.8]
-        'over__k_neighbors': [4, 5, 6, 8]
+        # 'over__n_neighbors': [5, 6, 8]
+    }
+    svm_grid = {
+        'clf__C':[0.001, 0.01, 0.1, 1, 10, 100],
+        'over__n_neighbors': [4, 5]
     }
 
     algs = {
-        # 'decision_tree': dtc,
-        # 'random_forest': rfc,
-        'xgboost': xgbc
+        'decision_tree': dtc,
+        'random_forest': rfc,
+        'xgboost': xgbc,
+        'svm': svm
     }
     grids = {
-        # 'decision_tree': dtc_grid,
-        # 'random_forest': rfc_grid,
-        'xgboost': xgbc_grid
+        'decision_tree': dtc_grid,
+        'random_forest': rfc_grid,
+        'xgboost': xgbc_grid,
+        'svm': svm_grid
     }
 
     # define number of cross validations
-    parameter_cv = 5
+    parameter_cv = 10
     cv = 10
 
     for a in algs:
 
-        # X_train = normalize_by_distance(X_train)
-
         # define imblearn pipeline
         pipeline = IMBPipeline(steps=[
             ('norm', FunctionTransformer(normalize_by_distance)),
-            ('over', SMOTE(sampling_strategy=0.3)),
-            ('under', RandomUnderSampler(sampling_strategy=0.5)),
+            ('over', ADASYN()),
+            # ('under', RandomUnderSampler(sampling_strategy=0.5)),
+            ('red', PCA(0.99)),
             ('clf', algs[a])
         ])
 
         # ----------------------------- NESTED CROSS VALIDATION ------------------------------ #
-        print('# ---------------------- NESTED CROSS VALIDATION ---------------------- # \n')
+        print('# ---------------------- NESTED CROSS VALIDATION {} ---------------------- # \n'.format(a))
 
-        # scores, confusion_matrixs, classification_reports, curves = nested_cross_validation(X_train, y_train, pipeline, parameter_cv, cv, grids[a])
-        # path = './images/supervised/{}/train/with_resample/'.format(a)
-        # evaluate_cross_validation(scores, confusion_matrixs, classification_reports, curves, path=path, show=False)
+        # scores = nested_cross_validation(X_train, y_train, pipeline, parameter_cv, cv, grids[a])
+        # path = './images/supervised/{}/train/'.format(a)
+        # evaluate_cross_validation(scores, path=path, show=True)
 
         # --------------------------- TRAIN MODEL WITH BEST PARAMS --------------------------- #
-        print('# -------------------- TRAIN MODEL WITH BEST PARAMS -------------------- # \n')
+        print('# -------------------- TRAIN MODEL WITH BEST PARAMS {} -------------------- # \n'.format(a))
 
-        # path = './images/supervised/{}/best_resample/borderline_'.format(a)
-        # cross_validation(X_train, y_train, pipeline, cv=cv, path=path)
-        estim_path = './models/{}_model'.format(a)
-        find_best_estimator(X_train, y_train, pipeline, grids[a], cv=10, path=estim_path)
-        # tree_structure(model)
+        # path = './images/supervised/{}/best_resample/multiclass/smote_'.format(a)
+        # cross_validation(X_train, y_train, pipeline, cv=cv, is_multi_class=True, path=path)
+        estim_path = './models/{}_model_pca_multi'.format(a)
+        find_best_estimator(X_train, y_train, pipeline, grids[a], cv=parameter_cv, is_multi_class=True, path=estim_path)
 
         # ------------------------------------ TEST MODEL ------------------------------------ #
-        print('# ----------------------------- TEST MODEL ----------------------------- # \n')
+        print('# ----------------------------- TEST MODEL {} ----------------------------- # \n'.format(a))
 
-        y_pred = predict_profile(estim_path, X_test)
-        print(y_pred)
-        
-        path = './images/supervised/{}/best_resample/over_under/'.format(a)
-        evaluate_predictions(y_test, y_pred, path=None, show=True)
+        y_pred, y_pred_proba = predict_profile(estim_path, X_test, is_multi_class=True, is_svm=a=='svm')
+        path = './images/supervised/{}/test/multiclass/'.format(a)
+        evaluate_predictions(y_test, y_pred, y_pred_proba, is_multi_class=True, path=path, show=False)

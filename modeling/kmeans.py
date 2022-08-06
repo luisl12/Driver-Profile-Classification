@@ -6,6 +6,7 @@ from sklearn.metrics import (
     calinski_harabasz_score
 )
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import numpy as np
 from pyclustering.cluster.kmeans import kmeans
 from pyclustering.utils.metric import distance_metric, type_metric
@@ -73,6 +74,7 @@ class KmeansClustering:
     def visualize_clusters(self, data, y_pred, show=False, path=None):
         dim = True
         # show clusters
+        mpl.style.use('default')
         if data.shape[1] > 2:
             fig = plt.figure(figsize=(10, 10))
             axis = fig.add_subplot(111, projection='3d')

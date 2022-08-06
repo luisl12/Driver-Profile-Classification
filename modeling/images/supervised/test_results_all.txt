@@ -1,0 +1,149 @@
+Dataset shape: (15002, 54)
+Number of trips belonging to class 0: 11915
+Number of trips belonging to class 1: 3034
+Number of trips belonging to class 2: 53
+Train balance after split: Counter({0: 9532, 1: 2427, 2: 42})
+Test balance after split: Counter({0: 2383, 1: 607, 2: 11})
+# ---------------------- NESTED CROSS VALIDATION decision_tree ---------------------- #
+
+# -------------------- TRAIN MODEL WITH BEST PARAMS decision_tree -------------------- #
+
+Train set - Accuracy: [0.96329015 0.96194767 0.96137366 0.9635864  0.96393822 0.96201248
+ 0.96201247 0.9639845  0.96359571 0.96196616]
+Test set - Accuracy: [0.96300319 0.96100319 0.96116986 0.96316986 0.96375312 0.96083653
+ 0.96200326 0.96316986 0.96275271 0.96117014]
+
+Train set - Precision: [0.96800298 0.96700106 0.96658352 0.96819191 0.9684864  0.96705373
+ 0.96702884 0.96849234 0.96825034 0.96699568]
+Test set - Precision: [0.96778605 0.96634698 0.96653514 0.96792269 0.968348   0.96627075
+ 0.96704656 0.96799095 0.96764843 0.96651648]
+
+Train set - Recall: [0.96329015 0.96194767 0.96137366 0.9635864  0.96393822 0.96201248
+ 0.96201247 0.9639845  0.96359571 0.96196616]
+Test set - Recall: [0.96300319 0.96100319 0.96116986 0.96316986 0.96375312 0.96083653
+ 0.96200326 0.96316986 0.96275271 0.96117014]
+
+Train set - F1: [0.96427464 0.96300578 0.96246193 0.96455176 0.96488967 0.96306727
+ 0.96306475 0.96492945 0.96457032 0.96302021]
+Test set - F1: [0.96402563 0.9621474  0.96230304 0.96419004 0.96472716 0.96198844
+ 0.96307666 0.96419045 0.96379455 0.9623067 ]
+
+Best score f1_weighted: 0.9674160120189967 with best params: {'clf__criterion': 'gini', 'clf__max_depth': 8, 'clf__min_samples_leaf': 0.05, 'clf__min_samples_split': 0.15, 'over__n_neighbors': 8}
+Best estimator: Pipeline(steps=[('norm',
+                 FunctionTransformer(func=<function normalize_by_distance at 0x000002159F92CD30>)),
+                ('over', ADASYN(n_neighbors=8)),
+                ('red', PCA(n_components=0.99)),
+                ('clf',
+                 DecisionTreeClassifier(max_depth=8, min_samples_leaf=0.05,
+                                        min_samples_split=0.15))])
+# ----------------------------- TEST MODEL decision_tree ----------------------------- # 
+
+# ---------------------- NESTED CROSS VALIDATION random_forest ---------------------- # 
+
+# -------------------- TRAIN MODEL WITH BEST PARAMS random_forest -------------------- #
+
+Train set - Accuracy: [0.97213198 0.97166908 0.97128949 0.97262268 0.97171535 0.97166907
+ 0.97231717 0.97232642 0.97136352 0.97120614]
+Test set - Accuracy: [0.96916854 0.96941833 0.96866812 0.97033486 0.96908514 0.96833514
+ 0.96941833 0.96950153 0.96891868 0.96883493]
+
+Train set - Precision: [0.97516419 0.97475782 0.97439726 0.97536799 0.97476729 0.97478244
+ 0.97522573 0.97515728 0.97445846 0.9743736 ]
+Test set - Precision: [0.97266245 0.97287717 0.97224996 0.97346034 0.97262802 0.97202851
+ 0.97284079 0.97282785 0.97250431 0.97243455]
+
+Train set - Recall: [0.97213198 0.97166908 0.97128949 0.97262268 0.97171535 0.97166907
+ 0.97231717 0.97232642 0.97136352 0.97120614]
+Test set - Recall: [0.96916854 0.96941833 0.96866812 0.97033486 0.96908514 0.96833514
+ 0.96941833 0.96950153 0.96891868 0.96883493]
+
+Train set - F1: [0.97273578 0.97228754 0.97191711 0.97318433 0.97232771 0.97229056
+ 0.97290329 0.97290297 0.97198725 0.97184158]
+Test set - F1: [0.96989406 0.97014886 0.96942714 0.97101874 0.96982733 0.96911094
+ 0.97014075 0.97022352 0.96967033 0.96958756]
+
+Best score f1_weighted: 0.9718866882602792 with best params: {'clf__criterion': 'entropy', 'clf__min_samples_split': 0.02, 'clf__n_estimators': 150, 'over__n_neighbors': 8}
+Best estimator: Pipeline(steps=[('norm',
+                 FunctionTransformer(func=<function normalize_by_distance at 0x000002159F92CD30>)),
+                ('over', ADASYN(n_neighbors=8)),
+                ('red', PCA(n_components=0.99)),
+                ('clf',
+                 RandomForestClassifier(criterion='entropy',
+                                        min_samples_split=0.02,
+                                        n_estimators=150))])
+# ----------------------------- TEST MODEL random_forest ----------------------------- # 
+
+# ---------------------- NESTED CROSS VALIDATION xgboost ---------------------- # 
+
+# -------------------- TRAIN MODEL WITH BEST PARAMS xgboost -------------------- #
+
+Train set - Accuracy: [0.97223383 0.97453917 0.97687231 0.98353844 0.98539939 0.98719553
+ 0.99253768 0.99624107 0.9987964  0.99816683]
+Test set - Accuracy: [0.96383569 0.96525257 0.96791903 0.96808535 0.96783555 0.96950236
+ 0.98216792 0.98466778 0.98633444 0.98141799]
+
+Train set - Precision: [0.97565182 0.97743403 0.97929987 0.98489915 0.98646232 0.98802072
+ 0.99284246 0.99633853 0.99881671 0.99820107]
+Test set - Precision: [0.9695352  0.97041365 0.9723414  0.97249136 0.97230164 0.97349363
+ 0.98360444 0.98570839 0.98712662 0.98287723]
+
+Train set - Recall: [0.97223383 0.97453917 0.97687231 0.98353844 0.98539939 0.98719553
+ 0.99253768 0.99624107 0.9987964  0.99816683]
+Test set - Recall: [0.96383569 0.96525257 0.96791903 0.96808535 0.96783555 0.96950236
+ 0.98216792 0.98466778 0.98633444 0.98141799]
+
+Train set - F1: [0.97289613 0.9750965  0.97733839 0.98379737 0.985602   0.98735247
+ 0.9925957  0.99626007 0.99880048 0.99817402]
+Test set - F1: [0.96491185 0.96616731 0.96866546 0.96887925 0.9685931  0.97017884
+ 0.9823495  0.98477705 0.98643987 0.98157641]
+
+Best score f1_weighted: 0.992778849630298 with best params: {'clf__colsample_bytree': 0.7, 'clf__learning_rate': 0.1, 'clf__max_depth': 6, 'clf__n_estimators': 250}
+Best estimator: Pipeline(steps=[('norm',
+                 FunctionTransformer(func=<function normalize_by_distance at 0x000002159F92CD30>)),
+                ('over', ADASYN()), ('red', PCA(n_components=0.99)),
+                ('clf',
+                 XGBClassifier(base_score=0.5, booster='gbtree', callbacks=None,
+                               colsample_bylevel=1, colsample_bynode=1,
+                               colsample_bytree=0.7, early_stopping_rounds=None,
+                               enable_categorical=False, eval_metric=None,
+                               g...d=-1, grow_policy='depthwise',
+                               importance_type=None, interaction_constraints='',
+                               learning_rate=0.1, max_bin=256,
+                               max_cat_to_onehot=4, max_delta_step=0,
+                               max_depth=6, max_leaves=0, min_child_weight=1,
+                               missing=nan, monotone_constraints='()',
+                               n_estimators=250, n_jobs=0, num_parallel_tree=1,
+                               objective='multi:softprob', predictor='auto',
+                               random_state=0, reg_alpha=0, ...))])
+# ----------------------------- TEST MODEL xgboost ----------------------------- # 
+
+# ---------------------- NESTED CROSS VALIDATION svm ---------------------- # 
+
+# -------------------- TRAIN MODEL WITH BEST PARAMS svm -------------------- #
+
+Train set - Accuracy: [0.96861373 0.96908591 0.98734365 0.98725106 0.99428752 0.99430603
+ 0.99772242 0.99778722 0.99942598 0.99946301]
+Test set - Accuracy: [0.96825319 0.96866972 0.98691799 0.98691792 0.99391722 0.99400062
+ 0.99683368 0.99716701 0.99883354 0.99883361]
+
+Train set - Precision: [0.97285375 0.97321508 0.98810666 0.98802514 0.9944451  0.99446334
+ 0.99774632 0.99781145 0.99942695 0.99946384]
+Test set - Precision: [0.97272664 0.97304123 0.98776589 0.98775389 0.9941343  0.99420765
+ 0.99689806 0.99721619 0.9988543  0.99885164]
+
+Train set - Recall: [0.96861373 0.96908591 0.98734365 0.98725106 0.99428752 0.99430603
+ 0.99772242 0.99778722 0.99942598 0.99946301]
+Test set - Recall: [0.96825319 0.96866972 0.98691799 0.98691792 0.99391722 0.99400062
+ 0.99683368 0.99716701 0.99883354 0.99883361]
+
+Train set - F1: [0.96944168 0.96989422 0.98749005 0.98739987 0.99431713 0.99433564
+ 0.99772699 0.99779175 0.9994262  0.9994632 ]
+Test set - F1: [0.96915641 0.9695531  0.98708601 0.98707788 0.99395656 0.99403859
+ 0.99683695 0.99716755 0.99882788 0.99882783]
+
+Best score f1_weighted: 0.9989110116164348 with best params: {'clf__C': 100, 'over__n_neighbors': 5}
+Best estimator: Pipeline(steps=[('norm',
+                 FunctionTransformer(func=<function normalize_by_distance at 0x000002159F92CD30>)),
+                ('over', ADASYN()), ('red', PCA(n_components=0.99)),
+                ('clf', SVC(C=100, kernel='linear'))])
+# ----------------------------- TEST MODEL svm ----------------------------- #

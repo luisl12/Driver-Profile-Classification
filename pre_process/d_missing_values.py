@@ -641,7 +641,7 @@ def delete_missing_values(df):
     # rows with all NaN (dont count start, end, distance and duration)
     df_mid = df.iloc[:, 4:].dropna(how='all')
     df = df.iloc[:, :4].join(df_mid)
-    # remove distance and duration = 0
+    # remove distance and duration <= 0
     df = df[df.distance > 0]
     df = df[df.duration > 0]
     # remove trips where duration is less than 1 minute
