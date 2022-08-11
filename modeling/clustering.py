@@ -241,7 +241,7 @@ def analyse_via_random_forest(data, target, n_top_features=3):
 
 if __name__ == "__main__":
 
-    df = read_csv_file('../datasets/supervised/trips_kmeans')
+    df = read_csv_file('../datasets/missing_values/trips_mv_all')
 
     # remove variables that dont relate to the objective of this thesis
     df = df[(df.columns.difference([
@@ -250,8 +250,8 @@ if __name__ == "__main__":
     ], sort=False))]
     print('Dataset shape:', df.shape)
 
-    df = df[df['target'] == 1]
-    df = df[(df.columns.difference(['target'], sort=False))]
+    # df = df[df['target'] == 1]
+    # df = df[(df.columns.difference(['target'], sort=False))]
     print('Dataset shape:', df.shape)
 
     print('\n ---------------------- Normalization ---------------------- \n')
@@ -296,10 +296,10 @@ if __name__ == "__main__":
     #     elbow_method(reductions[r], path=path+elbow_name, show=False)
     
     # for r in reductions:
-    #     min_pts = 2 * no_norm.shape[1]
+    #     min_pts = (2 * X_train_pca.shape[1]) - 1
     #     path = './images/unsupervised/best_eps_value/{}_'.format(r)
     #     norm = 'no_norm'
-    #     find_eps_value(no_norm, min_pts, path+norm)
+    #     find_eps_value(X_train_pca, min_pts, path=None)  # path+norm
         # distance norm: 7, 7, 7
         # duration norm: 0.065, 0.065, 0.065
         # no norm: 75, 75, 75
@@ -311,17 +311,17 @@ if __name__ == "__main__":
 
     print('\n ------------------ Clustering Approaches ------------------ \n')
     
-    metrics = ['EUCLIDEAN', 'EUCLIDEAN_SQUARE', 'MANHATTAN', 
-        'CHEBYSHEV', 'CANBERRA', 'CHI_SQUARE']
-    metrics = ['EUCLIDEAN']
-    k = 2
-    for r in reductions:
-        for m in metrics:
-            k_means = KmeansClustering(n_clusters=k, init='kmeans++', metric=m, data=reductions[r])
-            y_pred = k_means.fit_predict(reductions[r])
-            path = './images/unsupervised/kmeans/distance_norm/agressive_with_pca/'
-            k_means.visualize_clusters(reductions[r], y_pred, path=None, show=True)
-            k_means.evaluate_clusters(reductions[r], y_pred, path=None, show=True)
+    # metrics = ['EUCLIDEAN', 'EUCLIDEAN_SQUARE', 'MANHATTAN', 
+    #     'CHEBYSHEV', 'CANBERRA', 'CHI_SQUARE']
+    # metrics = ['EUCLIDEAN']
+    # k = 2
+    # for r in reductions:
+    #     for m in metrics:
+    #         k_means = KmeansClustering(n_clusters=k, init='kmeans++', metric=m, data=reductions[r])
+    #         y_pred = k_means.fit_predict(reductions[r])
+    #         path = './images/unsupervised/kmeans/distance_norm/agressive_with_pca/'
+    #         k_means.visualize_clusters(reductions[r], y_pred, path=None, show=True)
+    #         k_means.evaluate_clusters(reductions[r], y_pred, path=None, show=True)
 
             # res = [x for x, z in enumerate(y_pred) if z == 1]
             # removed = scaled_df.iloc[res]
@@ -332,22 +332,22 @@ if __name__ == "__main__":
 
 
     # metrics = ['manhattan', 'cosine', 'euclidean']
-    # metrics = ['euclidean']
-    # eps_norms = [7, 0.065, 75]  # distance, duration, no norm
-    # eps = eps_norms[0]
-    # for r in reductions:
-    #     min_pts = 2 * reductions[r].shape[1] 
-    #     for i, m in enumerate(metrics):
-    #         db = DBSCANClustering(eps=eps, min_pts=min_pts, metric=m)
-    #         y_pred = db.fit_predict(reductions[r])
-    #         path = './images/unsupervised/dbscan/duration_norm/{}/'.format(r)
-    #         db.visualize_clusters(reductions[r], y_pred, path=None, show=True)
-    #         db.evaluate_clusters(reductions[r], y_pred, path=None, show=True)
+    metrics = ['euclidean']
+    eps_norms = [7, 0.065, 75]  # distance, duration, no norm
+    eps = eps_norms[0]
+    for r in reductions:
+        min_pts = 2 * reductions[r].shape[1] 
+        for i, m in enumerate(metrics):
+            db = DBSCANClustering(eps=eps, min_pts=min_pts, metric=m)
+            y_pred = db.fit_predict(reductions[r])
+            path = './images/unsupervised/dbscan/duration_norm/{}/'.format(r)
+            db.visualize_clusters(reductions[r], y_pred, path=None, show=True)
+            db.evaluate_clusters(reductions[r], y_pred, path=None, show=True)
 
 
     # covariance_types = ['full', 'tied', 'diag', 'spherical']
     # covariance_types = ['spherical']
-    # k = 3
+    # k = 4
     # for r in reductions:
     #     for c in covariance_types:
     #         gm = GaussianMixtureClustering(n_clusters=k, covariance_type=c, init_params='random')

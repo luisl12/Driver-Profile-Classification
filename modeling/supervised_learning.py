@@ -131,12 +131,13 @@ def tree_structure(model):
             )
 
 
-def nested_cross_validation(data, target, algorithm, inner_n_splits, outter_n_splits, grid):
+def nested_cross_validation(data, target, algorithm, inner_n_splits, outter_n_splits, grid, is_multi_class=False):
 
     inner_cv = StratifiedKFold(n_splits=inner_n_splits, shuffle=True)
     outer_cv = StratifiedKFold(n_splits=outter_n_splits, shuffle=True)
 
-    clf = GridSearchCV(estimator=algorithm, param_grid=grid, cv=inner_cv, scoring='f1', n_jobs=-1)
+    scoring = 'f1' if not is_multi_class else 'f1_weighted'
+    clf = GridSearchCV(estimator=algorithm, param_grid=grid, cv=inner_cv, scoring=scoring, n_jobs=-1)
 
     confusion_matrixs = []
     classification_reports = []
@@ -155,11 +156,11 @@ def nested_cross_validation(data, target, algorithm, inner_n_splits, outter_n_sp
     #     return accuracy_score(y_true, y_pred)
 
     scoring = {
-        'accuracy': 'accuracy',  # make_scorer(get_confusion_matrix_with_acc),
-        'precision': 'precision',
-        'recall': 'recall',
-        'f1': 'f1',
-        'AUC': 'roc_auc'
+        'accuracy': 'accuracy',
+        'precision': 'precision' if not is_multi_class else 'precision_weighted',
+        'recall': 'recall' if not is_multi_class else 'recall_weighted',
+        'f1': 'f1' if not is_multi_class else 'f1_weighted',
+        'AUC': 'roc_auc' if not is_multi_class else 'roc_auc_ovo_weighted' 
     }
 
     scores = cross_validate(clf, X=data, y=target, cv=outer_cv, scoring=scoring, return_train_score=True, n_jobs=-1)
@@ -354,7 +355,7 @@ if __name__ == "__main__":
     dtc = DecisionTreeClassifier()
     xgbc = xgb.XGBClassifier(objective="binary:logistic")
     rfc = RandomForestClassifier()
-    svm = SVC(kernel="linear")
+    svm = SVC(kernel="linear", probability=True)
 
     # define param grid for each classifier
     dtc_grid = {
@@ -386,15 +387,15 @@ if __name__ == "__main__":
     }
 
     algs = {
-        'decision_tree': dtc,
-        'random_forest': rfc,
-        'xgboost': xgbc,
+        # 'decision_tree': dtc,
+        # 'random_forest': rfc,
+        # 'xgboost': xgbc,
         'svm': svm
     }
     grids = {
-        'decision_tree': dtc_grid,
-        'random_forest': rfc_grid,
-        'xgboost': xgbc_grid,
+        # 'decision_tree': dtc_grid,
+        # 'random_forest': rfc_grid,
+        # 'xgboost': xgbc_grid,
         'svm': svm_grid
     }
 
@@ -416,21 +417,21 @@ if __name__ == "__main__":
         # ----------------------------- NESTED CROSS VALIDATION ------------------------------ #
         print('# ---------------------- NESTED CROSS VALIDATION {} ---------------------- # \n'.format(a))
 
-        # scores = nested_cross_validation(X_train, y_train, pipeline, parameter_cv, cv, grids[a])
-        # path = './images/supervised/{}/train/'.format(a)
-        # evaluate_cross_validation(scores, path=path, show=True)
+        scores = nested_cross_validation(X_train, y_train, pipeline, parameter_cv, cv, grids[a], is_multi_class=True)
+        path = './images/supervised/{}/train/multiclass/'.format(a)
+        evaluate_cross_validation(scores, path=path, show=True)
 
         # --------------------------- TRAIN MODEL WITH BEST PARAMS --------------------------- #
         print('# -------------------- TRAIN MODEL WITH BEST PARAMS {} -------------------- # \n'.format(a))
 
         # path = './images/supervised/{}/best_resample/multiclass/smote_'.format(a)
         # cross_validation(X_train, y_train, pipeline, cv=cv, is_multi_class=True, path=path)
-        estim_path = './models/{}_model_pca_multi'.format(a)
-        find_best_estimator(X_train, y_train, pipeline, grids[a], cv=parameter_cv, is_multi_class=True, path=estim_path)
+        # estim_path = './models/{}_model_pca_multi'.format(a)
+        # find_best_estimator(X_train, y_train, pipeline, grids[a], cv=parameter_cv, is_multi_class=True, path=estim_path)
 
         # ------------------------------------ TEST MODEL ------------------------------------ #
         print('# ----------------------------- TEST MODEL {} ----------------------------- # \n'.format(a))
 
-        y_pred, y_pred_proba = predict_profile(estim_path, X_test, is_multi_class=True, is_svm=a=='svm')
-        path = './images/supervised/{}/test/multiclass/'.format(a)
-        evaluate_predictions(y_test, y_pred, y_pred_proba, is_multi_class=True, path=path, show=False)
+        # y_pred, y_pred_proba = predict_profile(estim_path, X_test, is_multi_class=True, is_svm=a=='svm')
+        # path = './images/supervised/{}/test/multiclass/'.format(a)
+        # evaluate_predictions(y_test, y_pred, y_pred_proba, is_multi_class=True, path=path, show=False)

@@ -5,6 +5,7 @@ from sklearn.metrics import (
     davies_bouldin_score,
     calinski_harabasz_score
 )
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -41,6 +42,7 @@ class DBSCANClustering:
 
     def visualize_clusters(self, data, y_pred, path=None, show=False):
         # show clusters
+        mpl.style.use('default')
         if data.shape[1] > 2:
             fig = plt.figure(figsize=(10, 10))
             axis = fig.add_subplot(111, projection='3d')

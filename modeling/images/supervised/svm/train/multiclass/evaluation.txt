@@ -1,0 +1,12 @@
+fit_time mean: 180.8176483154297 with a standard deviation: 59.5809924223396 
+score_time mean: 0.08330156803131103 with a standard deviation: 0.05292412400528775 
+test_accuracy mean: nan with a standard deviation: nan 
+train_accuracy mean: nan with a standard deviation: nan 
+test_precision mean: nan with a standard deviation: nan 
+train_precision mean: nan with a standard deviation: nan 
+test_recall mean: nan with a standard deviation: nan 
+train_recall mean: nan with a standard deviation: nan 
+test_f1 mean: nan with a standard deviation: nan 
+train_f1 mean: nan with a standard deviation: nan 
+test_AUC mean: nan with a standard deviation: nan 
+train_AUC mean: nan with a standard deviation: nan 

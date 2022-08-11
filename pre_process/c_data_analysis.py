@@ -6,35 +6,41 @@ import pandas as pd
 from b_construct_dataset import read_csv_file
 
 
-df = read_csv_file('../datasets/missing_values/trips_mv_all')
+df1 = read_csv_file('../datasets/constructed/trips_until_2022-05-13')
+df2 = read_csv_file('../datasets/constructed/trips_test_2022-05-14_2022-07-20')
+df = pd.concat([df1, df2], ignore_index=True)
+df = df[(df.columns.difference([
+    'lat', 'lon', 'over_speed_limit'
+], sort=False))]
 
 # remove variables that dont relate to the objective of this thesis
 #  'trip_start', 'trip_end', 
-df = df[(df.columns.difference([
-    'light_mode', 'zero_speed_time', 'n_zero_speed', 'n_ignition_on', 'n_ignition_off',
-    'n_high_beam', 'n_low_beam', 'n_wipers', 'n_signal_right', 'n_signal_left'
-], sort=False))]
+# df = df[(df.columns.difference([
+#     'light_mode', 'zero_speed_time', 'n_zero_speed', 'n_ignition_on', 'n_ignition_off',
+#     'n_high_beam', 'n_low_beam', 'n_wipers', 'n_signal_right', 'n_signal_left'
+# ], sort=False))]
 
 print('Dataset shape:', df.shape)
 
 print("------------------- Dataset ------------------- \n")
 print(df, "\n")
+print(df.columns)
 
 print("------------------- Describe ------------------- \n")
 print(df.describe(), "\n")
 
-print(df[df['duration'] <= 0])
-print(df[df['distance'] <= 0])
+# print(df[df['duration'] <= 0])
+# print(df[df['distance'] <= 0])
 
 print("------------------- Info ------------------- \n")
-# print(df.info(), "\n")
+print(df.info(), "\n")
 
 print("------------------- Missing Values ------------------- \n")
-# print(df.isnull().sum().to_string(), "\n")
+print(df.isnull().sum().to_string(), "\n")
 
 print("---------------- Column Names with Missing Values ---------------- \n")
-# columns_nan = df.columns[df.isnull().any()].tolist()
-# print(columns_nan, len(columns_nan), "\n")
+columns_nan = df.columns[df.isnull().any()].tolist()
+print(columns_nan, len(columns_nan), "\n")
 
 # plot to see data distribution
 """
@@ -44,9 +50,11 @@ print("---------------- Column Names with Missing Values ---------------- \n")
   determining the distribution shape because they're not affected by the
   number of bins.
 """
+# sns.set(rc={"figure.figsize":(10, 5)})
 # for c in columns_nan:
-#     if c != 'light_mode':
-#         sns.boxplot(trips[c])
-#         plt.show()
-#         sns.distplot(trips[c])
-#         plt.show()
+# 	if c != 'light_mode':
+# 		fig, axes = plt.subplots(1, 2)
+# 		sns.boxplot(df[c], ax=axes[0])
+# 		sns.distplot(df[c], ax=axes[1])
+# 		# plt.show()
+# 		plt.savefig('./images/features_distribution/' + c + '.png')

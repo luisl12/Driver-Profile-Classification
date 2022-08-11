@@ -259,9 +259,6 @@ def fill_me_aws_missing_values(df, column_names):
         dataset['trip_start'] = pd.to_datetime(dataset['trip_start'])
         dataset['trip_end'] = pd.to_datetime(dataset['trip_end'])
         for i, row in dataset.iterrows():
-            print(row)
-            print(dataset.at[i, 'light_mode'])
-            print(get_light_mode(row))
             dataset.at[i, 'light_mode'] = get_light_mode(row)
         df['light_mode'] = df['light_mode'].fillna(dataset['light_mode'])
     if 'n_tsr_level' in column_names:
@@ -700,7 +697,9 @@ if __name__ == "__main__":
     df1 = read_csv_file('../datasets/missing_values/trips_mv')
     df2 = read_csv_file('../datasets/missing_values/trips_mv_test')
     trips = pd.concat([df1, df2], ignore_index=True)
+
     print(trips.shape)
+
 
     # remove columns/rows that have all values NaN
     trips = delete_missing_values(trips)
@@ -729,7 +728,7 @@ if __name__ == "__main__":
     columns_nan = check_columns_with_nulls(trips)
 
     print(trips)
-
+    print(trips.columns)
     if len(columns_nan) == 0:
         # store dataset
         store_csv('../datasets/missing_values', 'trips_mv_all', trips)

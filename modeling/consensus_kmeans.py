@@ -34,31 +34,31 @@ class ConsensusKmeans:
             self.kmax = int(round(np.sqrt(N)))
 
         grid = {
-            'n_clusters': np.random.randint(low=self.kmin, high=self.kmax, size=self.n_ensemble)
+            'k': np.random.randint(low=self.kmin, high=self.kmax, size=self.n_ensemble)
         }
 
-        # ensemble, = bioc.create_ensemble(data.to_numpy(), fcn=bioc.kmeans, grid=grid)
-        # return ensemble
+        ensemble, = bioc.create_ensemble(data.to_numpy(), fcn=bioc.kmeans, grid=grid)
+        return ensemble
 
-        metrics = ['EUCLIDEAN', 'EUCLIDEAN_SQUARE', 'MANHATTAN', 'CHEBYSHEV', 'CANBERRA', 'CHI_SQUARE']
-        grid = ParameterGrid(grid)
+        # metrics = ['EUCLIDEAN', 'EUCLIDEAN_SQUARE', 'MANHATTAN', 'CHEBYSHEV', 'CANBERRA', 'CHI_SQUARE']
+        # grid = ParameterGrid(grid)
 
         # run kmeans for each ensemble
-        ensemble = []
+        # ensemble = []
         
-        for params in grid:
-            # algs = ['kmeans', 'gaussian']
-            # metric = np.random.choice(metrics, 1, p=[0.4, 0.5, 0.025, 0.025, 0.025, 0.025])
-            # alg = np.random.choice(algs, 1, p=[0.7, 0.3])
-            # if alg == 'kmeans':
-            #    k_means = KmeansClustering(data=data, init='random', metric='EUCLIDEAN_SQUARE', **params)
-            # else:
-            #     k_means = GaussianMixtureClustering(covariance_type='spherical', **params)
-            # print(k_means)
-            k_means = KmeansClustering(data=data, init='random', metric='EUCLIDEAN', **params)
-            y_pred = k_means.fit_predict(data)
-            ensemble.append(bioc._extract_clusters(y_pred))
-        return ensemble
+        # for params in grid:
+        #     # algs = ['kmeans', 'gaussian']
+        #     # metric = np.random.choice(metrics, 1, p=[0.4, 0.5, 0.025, 0.025, 0.025, 0.025])
+        #     # alg = np.random.choice(algs, 1, p=[0.7, 0.3])
+        #     # if alg == 'kmeans':
+        #     #    k_means = KmeansClustering(data=data, init='random', metric='EUCLIDEAN_SQUARE', **params)
+        #     # else:
+        #     #     k_means = GaussianMixtureClustering(covariance_type='spherical', **params)
+        #     # print(k_means)
+        #     k_means = KmeansClustering(data=data, init='random', metric='EUCLIDEAN', **params)
+        #     y_pred = k_means.fit_predict(data)
+        #     ensemble.append(bioc._extract_clusters(y_pred))
+        # return ensemble
 
     def coassoc_matrix(self, ensemble, data_size, path=None, show=False):
         coassoc, = bioc.create_coassoc(ensemble, data_size)
@@ -71,22 +71,6 @@ class ConsensusKmeans:
 
     def coassoc_partition(self, coassoc, k, linkage):
         clusters, = bioc.coassoc_partition(coassoc, k, linkage)
-
-        # # convert coassoc to condensed format, dissimilarity
-        # mx = np.max(coassoc)
-        # D = biom.squareform(mx - coassoc)
-
-        # # build linkage
-        # Z = hierarchy.linkage(D, method=linkage)
-        # plt.figure()
-        # dn = hierarchy.dendrogram(Z)
-        # plt.show()
-
-        # labels = hierarchy.fcluster(Z, k, 'maxclust')
-
-        # # get cluster indices
-        # clusters = bioc._extract_clusters(labels)
-
         return clusters
 
     def visualize_clusters(self, data, clusters, path=None, show=False):

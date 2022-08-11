@@ -20,6 +20,7 @@ import seaborn as sns
 from mpl_toolkits.mplot3d import Axes3D
 # local
 from .b_construct_dataset import read_csv_file
+from .f_normalization import normalize_by_distance, normalize_by_duration
 
 
 def pca(X_train, X_test, variance_th, debug=False):
@@ -183,47 +184,42 @@ def select_n_components(var_ratio, goal_var):
 if __name__ == "__main__":
 
     # read dataset
-    trips = read_csv_file(
-        '../datasets/normalization/trips_mm_s'
-    )
+    df = read_csv_file('../datasets/missing_values/trips_mv_all')
+    
+    df = df[(df.columns.difference([
+        'trip_start', 'trip_end', 'light_mode', 'zero_speed_time', 'n_zero_speed', 'n_ignition_on',
+        'n_ignition_off', 'n_high_beam', 'n_low_beam', 'n_wipers', 'n_signal_right', 'n_signal_left'
+    ], sort=False))]
+    print('Dataset shape:', df.shape)
+
+    print(df.shape)
+
+    # normalize
+    norm_dist = normalize_by_distance(df)
+    norm_dur = normalize_by_duration(df)
 
     # ------------- PCA ------------- #
-    X_train, X_test = pca(trips, None, 0.9, True)
+    X_train, X_test = pca(norm_dur, None, 0.99, debug=True)
 
     # ------------- SVD ------------- #
-    # n_components = trips.shape[1] - 1
-    # X_train, X_test, best_n_comp = svd(trips, None, n_components, 0.9, True)
-    # X_train, X_test, _ = svd(trips, None, best_n_comp, 0.9, True)
+    # n_components = norm_dist.shape[1] - 1
+    # X_train, X_test, best_n_comp = svd(norm_dist, None, n_components, 0.99, debug=False)
+    # X_train, X_test, _ = svd(norm_dist, None, best_n_comp, 0.99, debug=True)
 
     # ------------- TSNE ------------- #
     # X_train = tsne(trips, 2, True)
 
-    # X_train = pd.DataFrame(X_train)
-    # print(X_train, X_train.shape)
-
-    # # ------------- TEST KMEANS ------------- #
-    # from sklearn.cluster import KMeans
-    # train_set = X_train[:7293]
-    # test_set = X_train[7293:]
-    # print('Train size:', train_set.shape)
-    # print('Test size:', test_set.shape)
-
-    # kmeans = KMeans(n_clusters=3, random_state=0).fit(train_set)
-    # print('Labels:', kmeans.labels_, len(kmeans.labels_))
-    # predicted = kmeans.predict(test_set)
-    # print('Prediction:', predicted, len(predicted))
-    # print('Clusters:', kmeans.cluster_centers_)
-
-    # pd.options.display.float_format = '{:,.3f}'.format
-    # plt.figure(figsize=(20, 20))
-    # # annot_kws={'size': 5}
-    # # annot=True
-    # correlation = X_train.corr()
-    # sns.heatmap(
-    #     correlation, linewidths=.3, vmax=1, vmin=-1, center=0, cmap='vlag',
-    #     annot=True
-    # )
-    # correlation = correlation.unstack()
-    # correlation = correlation[abs(correlation) >= 0.7]
-    # plt.show()
-    # print(correlation.to_string())
+    pd.options.display.float_format = '{:,.3f}'.format
+    plt.figure(figsize=(20, 20))
+    plt.tight_layout()
+    # annot_kws={'size': 5}
+    # annot=True
+    correlation = X_train.corr()
+    sns.heatmap(
+        correlation, linewidths=.3, vmax=1, vmin=-1, center=0, cmap='vlag',
+        annot=True
+    )
+    correlation = correlation.unstack()
+    correlation = correlation[abs(correlation) >= 0.7]
+    plt.show()
+    print(correlation.to_string())

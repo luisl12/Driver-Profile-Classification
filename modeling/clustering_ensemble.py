@@ -46,14 +46,13 @@ if __name__ == "__main__":
     clusters = ck.ensemble(X_train_pca)
     
     path='./images/unsupervised/consensus_kmeans/{}/pca_coassoc_'.format(norm) + l
-    coassoc = ck.coassoc_matrix(clusters, len(X_train_pca), path=path, show=False)
+    coassoc = ck.coassoc_matrix(clusters, len(X_train_pca), path=None, show=True)
 
     k = 2
     clusters = ck.coassoc_partition(coassoc, k, l)
     path='./images/unsupervised/consensus_kmeans/{}/pca_'.format(norm)
-    y_pred = ck.visualize_clusters(X_train_pca, clusters, path=path+'clusters_'+l, show=False)
-    ck.evaluate_clusters(X_train_pca, y_pred, path=path, show=False)
-
+    y_pred = ck.visualize_clusters(X_train_pca, clusters, path=None, show=True)  # path+'clusters_'+l
+    ck.evaluate_clusters(X_train_pca, y_pred, path=None, show=True)
     
 
     # read df again and add new target column and save

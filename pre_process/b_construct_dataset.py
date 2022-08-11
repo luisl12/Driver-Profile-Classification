@@ -173,7 +173,7 @@ def construct_dataset(data, info):
     del info['uuid']
     df = pd.DataFrame([info])
     not_events = [
-        'ECG', 'IBI', 'DriverChange', 'CAN', 'oSeven_Trip', 'ME_Tamper_Map',
+        'ECG', 'IBI', 'CAN', 'DriverChange', 'oSeven_Trip', 'ME_Tamper_Map',
         'iDreams_Driver_Map', 'Driver_Map',
         'Drowsiness',  # Drowsiness Map is enough
         'LOD_Event',  # Hands On Detection Map is enough
@@ -229,6 +229,12 @@ def construct_dataset(data, info):
             df = edit_idreams_speeding(ev, df)
         elif e == 'GPS':
             df = edit_gps_event(ev, df)
+        # elif e == 'DriverChange':
+        #     driver = None
+        #     if ev is not None:
+        #         driver = ev['uuid'].iloc[0]
+        #         print('driver:', driver)
+        #     df['driver'] = driver
     return df
 
 
@@ -1096,7 +1102,7 @@ if __name__ == "__main__":
     # info = read_json_file(folder + 'info.json')
 
     pull_trips_and_store_df(
-        '../datasets/constructed', 'trips_test_2018-05-14_2022-07-20', '2022-05-04', '2022-05-03'
+        '../datasets/constructed', 'trips_test_drivers_2022-05-14_2022-07-20', '2022-05-14', None
     )
 
     # df1_name = '../datasets/constructed/trips_2021-04-1_2021-07-1'
