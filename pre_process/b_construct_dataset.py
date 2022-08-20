@@ -6,8 +6,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import json
 # local
-from .b_open_street_map import is_over_speed_limit
-from .a_idreams_pull_trips import (
+from b_open_street_map import is_over_speed_limit
+from a_idreams_pull_trips import (
     parse_input_date,
     get_vehicles,
     get_vehicle_trips,
@@ -1102,7 +1102,7 @@ if __name__ == "__main__":
     # info = read_json_file(folder + 'info.json')
 
     pull_trips_and_store_df(
-        '../datasets/constructed', 'trips_test_drivers_2022-05-14_2022-07-20', '2022-05-14', None
+        '../datasets/constructed', 'trips_test_drivers_2022-07-21_2022-08-20', '2022-07-21', None
     )
 
     # df1_name = '../datasets/constructed/trips_2021-04-1_2021-07-1'

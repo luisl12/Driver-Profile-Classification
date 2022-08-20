@@ -1,6 +1,0 @@
-N instances belonging to cluster 0: 509 
-N instances belonging to cluster 1: 14077 
-Calinski score: 2554.827379066907 
-Davies-Bouldin score: 1.3987552387201572 
-Silhouette score: 0.7072326307229051 
- 

@@ -16,6 +16,7 @@ from collections import Counter
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
 from imblearn.over_sampling import RandomOverSampler, SMOTE, ADASYN, BorderlineSMOTE
 from imblearn.under_sampling import RandomUnderSampler
 from sklearn.model_selection import cross_validate, GridSearchCV, StratifiedKFold, train_test_split
@@ -30,6 +31,7 @@ from sklearn.metrics import (
     classification_report,
     roc_curve,
     auc,
+    roc_auc_score,
     precision_recall_curve,
     ConfusionMatrixDisplay,
     RocCurveDisplay,
@@ -40,7 +42,7 @@ from imblearn.pipeline import Pipeline as IMBPipeline
 from sklearn.tree import DecisionTreeClassifier, plot_tree, export_text
 from sklearn.ensemble import RandomForestClassifier
 import xgboost as xgb
-from sklearn.svm import SVC
+from sklearn.svm import SVC, LinearSVC
 # local
 from pre_process import read_csv_file
 
@@ -139,22 +141,6 @@ def nested_cross_validation(data, target, algorithm, inner_n_splits, outter_n_sp
     scoring = 'f1' if not is_multi_class else 'f1_weighted'
     clf = GridSearchCV(estimator=algorithm, param_grid=grid, cv=inner_cv, scoring=scoring, n_jobs=-1)
 
-    confusion_matrixs = []
-    classification_reports = []
-    curves = {
-        'roc': [],
-        'det': [],
-        'prec_rec': []
-    }
-
-    # def get_confusion_matrix_with_acc(y_true, y_pred):
-    #     confusion_matrixs.append(confusion_matrix(y_true, y_pred, labels=np.unique(target)))  # , normalize='true'
-    #     classification_reports.append(classification_report(y_true, y_pred))
-    #     curves['roc'].append(roc_curve(y_true, y_pred))
-    #     curves['det'].append(det_curve(y_true, y_pred))
-    #     curves['prec_rec'].append(precision_recall_curve(y_true, y_pred))
-    #     return accuracy_score(y_true, y_pred)
-
     scoring = {
         'accuracy': 'accuracy',
         'precision': 'precision' if not is_multi_class else 'precision_weighted',
@@ -190,7 +176,6 @@ def evaluate_cross_validation(scores, path=None, show=False):
                 f.write("{} mean: {} with a standard deviation: {} \n".format(s, scores[s].mean(), scores[s].std()))
     
     if show:
-        print('Scores:', scores)
         for s in scores:
             print("{} mean: {} with a standard deviation: {}".format(s, scores[s].mean(), scores[s].std()))
 
@@ -217,7 +202,7 @@ def evaluate_predictions(y_true, y_pred, y_pred_proba, is_multi_class=False, pat
     cm = confusion_matrix(y_true, y_pred)
     if not is_multi_class:
         tn, fp, fn, tp = cm.ravel()
-    report = classification_report(y_true, y_pred)
+    report = classification_report(y_true, y_pred, digits=3)
     acc_score = accuracy_score(y_true, y_pred)
     prec_score = precision_score(y_true, y_pred, average='weighted' if is_multi_class else 'binary')
     rec_score = recall_score(y_true, y_pred, average='weighted' if is_multi_class else 'binary')
@@ -239,15 +224,14 @@ def evaluate_predictions(y_true, y_pred, y_pred_proba, is_multi_class=False, pat
         # Compute ROC curve and ROC area for each class
         fpr = dict()
         tpr = dict()
-        roc_auc = dict()
         prec = dict()
         rec = dict()
         # binarize ovr
         y_test = label_binarize(y_true, classes=np.unique(y_true))
         for i in range(len(np.unique(y_true))):
             fpr[i], tpr[i], _ = roc_curve(y_test[:, i], y_pred_proba[:, i])
-            roc_auc[i] = auc(fpr[i], tpr[i])
             prec[i], rec[i], _ = precision_recall_curve(y_test[:, i], y_pred_proba[:, i])
+        roc_auc = roc_auc_score(y_test, y_pred_proba, average=None)
 
         plt.figure()
         colors = cycle(["r", "g", "b"])
@@ -257,7 +241,7 @@ def evaluate_predictions(y_true, y_pred, y_pred_proba, is_multi_class=False, pat
                 tpr[i],
                 color=color,
                 lw=2,
-                label="ROC curve of class {0} (area = {1:0.2f})".format(i, roc_auc[i]),
+                label="ROC curve of class {0} (area = {1:0.3f})".format(i, roc_auc[i]),
             )
         plt.xlim([-0.05, 1.05])
         plt.ylim([-0.05, 1.05])
@@ -337,7 +321,7 @@ def normalize_by_distance(df):
 
 if __name__ == "__main__":
 
-    # read first and second dataset and cocatenate both
+    # read dataset
     df = read_csv_file('../datasets/supervised/trips_kmeans_agressive')
 
     print('------------------ DATASET INFO ------------------ \n')
@@ -345,9 +329,11 @@ if __name__ == "__main__":
 
     data = df.drop('target', axis=1)
     target = df['target']
-    X_train, X_test, y_train, y_test = train_test_split(data, target, test_size=0.20, stratify=target, shuffle=True)
-    print('Train balance after split:', Counter(y_train))
-    print('Test balance after split:', Counter(y_test))
+
+    # split train and test - dont split with nested cross validation
+    # X_train, X_test, y_train, y_test = train_test_split(data, target, test_size=0.20, stratify=target, shuffle=True)
+    # print('Train balance after split:', Counter(y_train))
+    # print('Test balance after split:', Counter(y_test))
 
     # --------------------------------- DEFINE PIPELINE --------------------------------- #
 
@@ -355,7 +341,8 @@ if __name__ == "__main__":
     dtc = DecisionTreeClassifier()
     xgbc = xgb.XGBClassifier(objective="binary:logistic")
     rfc = RandomForestClassifier()
-    svm = SVC(kernel="linear", probability=True)
+    svm = SVC(kernel='linear', probability=True) 
+    # svm = LinearSVC(multi_class='ovr', dual=False) #, class_weight='balanced')
 
     # define param grid for each classifier
     dtc_grid = {
@@ -367,7 +354,7 @@ if __name__ == "__main__":
         'over__n_neighbors': [4, 5, 6, 8]
     }         
     rfc_grid = {
-        'clf__n_estimators':[100, 150, 200, 250],  # just pick a high number
+        'clf__n_estimators': [100, 150, 200, 250],  # just pick a high number
         'clf__criterion': ['gini', 'entropy'],
         # 'clf__max_depth': [8, 10, 12],  # not very important in random forest
         'clf__min_samples_split': [0.02, 0.05, 0.1, 0.15, 0.2],
@@ -375,33 +362,33 @@ if __name__ == "__main__":
         'over__n_neighbors': [4, 5, 6, 8]
     }
     xgbc_grid = {
-        'clf__n_estimators':[150, 200, 250],
-        'clf__max_depth':[6, 8], # [6, 8, 10]
+        'clf__n_estimators': [150, 200, 250],
+        'clf__max_depth': [6, 8], # [6, 8, 10]
         'clf__learning_rate': [0.01, 0.05, 0.1], 
         'clf__colsample_bytree': [0.3, 0.5, 0.7],
         # 'over__n_neighbors': [5, 6, 8]
     }
     svm_grid = {
-        'clf__C':[0.001, 0.01, 0.1, 1, 10, 100],
-        'over__n_neighbors': [4, 5]
+        'clf__C': [0.001, 0.01, 0.1, 1, 10, 100],
+        # 'over__n_neighbors': [4, 5, 6, 8]
     }
 
     algs = {
+        'svm': svm,
         # 'decision_tree': dtc,
         # 'random_forest': rfc,
-        # 'xgboost': xgbc,
-        'svm': svm
+        # 'xgboost': xgbc
     }
     grids = {
+        'svm': svm_grid,
         # 'decision_tree': dtc_grid,
         # 'random_forest': rfc_grid,
-        # 'xgboost': xgbc_grid,
-        'svm': svm_grid
+        # 'xgboost': xgbc_grid
     }
 
     # define number of cross validations
     parameter_cv = 10
-    cv = 10
+    cv = 3
 
     for a in algs:
 
@@ -409,7 +396,6 @@ if __name__ == "__main__":
         pipeline = IMBPipeline(steps=[
             ('norm', FunctionTransformer(normalize_by_distance)),
             ('over', ADASYN()),
-            # ('under', RandomUnderSampler(sampling_strategy=0.5)),
             ('red', PCA(0.99)),
             ('clf', algs[a])
         ])
@@ -417,7 +403,7 @@ if __name__ == "__main__":
         # ----------------------------- NESTED CROSS VALIDATION ------------------------------ #
         print('# ---------------------- NESTED CROSS VALIDATION {} ---------------------- # \n'.format(a))
 
-        scores = nested_cross_validation(X_train, y_train, pipeline, parameter_cv, cv, grids[a], is_multi_class=True)
+        scores = nested_cross_validation(data, target, pipeline, parameter_cv, cv, grids[a], is_multi_class=True)
         path = './images/supervised/{}/train/multiclass/'.format(a)
         evaluate_cross_validation(scores, path=path, show=True)
 

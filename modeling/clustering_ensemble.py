@@ -33,6 +33,9 @@ if __name__ == "__main__":
     
     # dimensionality reduction
     X_train_pca, _ = pca(norm_distance, None, 0.99, False)
+    n_components = norm_distance.shape[1] - 1
+    _, _, best_n_comp = svd(norm_distance, None, n_components, 0.99, debug=False)
+    X_train_svd, _, _ = svd(norm_distance, None, best_n_comp, 0.99, debug=False)
 
     # consensus kmeans
     kmin = 10
@@ -43,16 +46,16 @@ if __name__ == "__main__":
     norm = 'distance_norm'
     
     ck = ConsensusKmeans(kmin, kmax, n_ensemble)
-    clusters = ck.ensemble(X_train_pca)
+    clusters = ck.ensemble(norm_distance)
     
     path='./images/unsupervised/consensus_kmeans/{}/pca_coassoc_'.format(norm) + l
-    coassoc = ck.coassoc_matrix(clusters, len(X_train_pca), path=None, show=True)
+    coassoc = ck.coassoc_matrix(clusters, len(norm_distance), path=None, show=True)
 
     k = 2
     clusters = ck.coassoc_partition(coassoc, k, l)
-    path='./images/unsupervised/consensus_kmeans/{}/pca_'.format(norm)
-    y_pred = ck.visualize_clusters(X_train_pca, clusters, path=None, show=True)  # path+'clusters_'+l
-    ck.evaluate_clusters(X_train_pca, y_pred, path=None, show=True)
+    path='./images/unsupervised/consensus_kmeans/{}/no_red_'.format(norm)
+    y_pred = ck.visualize_clusters(norm_distance, clusters, path=None, show=True)  # path+'clusters_'+l
+    ck.evaluate_clusters(norm_distance, y_pred, path=path, show=True)
     
 
     # read df again and add new target column and save

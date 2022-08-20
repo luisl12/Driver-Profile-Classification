@@ -12,7 +12,7 @@ Calinski score: 82.74470059083679
 Davies-Bouldin score: 2.247907004226528 
 Silhouette score: 0.3384550224660376 
  
------------- euclidean DISTANCE ------------ 
+------------ euclidean DISTANCE ------------ BEST
 N instances belonging to cluster -1: 293 
 N instances belonging to cluster 0: 14709 
 Calinski score: 1918.2411363268614 

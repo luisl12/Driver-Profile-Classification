@@ -11,7 +11,7 @@ Calinski score: Only one cluster found
 Davies-Bouldin score: Only one cluster found 
 Silhouette score: Only one cluster found 
  
------------- euclidean DISTANCE ------------ 
+------------ euclidean DISTANCE ------------ BEST
 N instances belonging to cluster -1: 680 
 N instances belonging to cluster 0: 14322 
 Calinski score: 2913.508433809102 
